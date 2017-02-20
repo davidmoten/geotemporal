@@ -20,7 +20,7 @@ public final class Hilbert {
      *            Number of bits per coordinate.
      * @return Point in N-space.
      */
-    public static long[] axes(final long[] transposedIndex, final int bits) {
+    public static long[] point(final long[] transposedIndex, final int bits) {
         final long[] result = transposedIndex.clone();
         final int dims = result.length;
         grayDecode(result, dims);
@@ -57,16 +57,16 @@ public final class Hilbert {
      *
      * Note: In Skilling's paper, this function is called AxestoTranspose.
      * 
-     * @param hilbertAxes
+     * @param point
      *            Point in N-space.
      * @param bits
      *            Depth of the Hilbert curve. If bits is one, this is the
      *            top-level Hilbert curve.
      * @return The Hilbert distance (or index) as a transposed Hilbert index.
      */
-    public static long[] transposedIndex(final long[] hilbertAxes, final int bits) {
-        final long[] result = hilbertAxes.clone();
-        final int dims = hilbertAxes.length;
+    public static long[] transposedIndex(final long[] point, final int bits) {
+        final long[] result = point.clone();
+        final int dims = point.length;
         final long maxBit = 1L << (bits - 1);
         inverseUndo(result, dims, maxBit);
         grayEncode(result, dims, maxBit);
@@ -150,6 +150,76 @@ public final class Hilbert {
         final long swap = (array[0] ^ array[index]) & mask;
         array[0] ^= swap;
         array[index] ^= swap;
+    }
+
+    /// <summary>
+    /// Convert a BigInteger into an array of bits.
+    /// </summary>
+    /// <param name="N">BigInteger to convert.</param>
+    /// <returns>Array of ones and zeroes. The first element is the low bit of
+    /// the BigInteger.
+    /// The last bit is the sign bit.
+    /// </returns>
+    public static int[] unpackBigInteger(BigInteger N) {
+        byte[] bytes = N.toByteArray();
+        int[] bits = new int[bytes.length << 3];
+        int bitIndex = 0;
+        for (byte b : bytes) {
+            byte bShift = b;
+            for (int bitInByte = 0; bitInByte < 8; bitInByte++) {
+                bits[bitIndex++] = bShift & 1;
+                bShift >>= 1;
+            }
+        }
+        return bits;
+    }
+
+    /// <summary>
+    /// Convert a BigInteger into an array of bits using the supplied array to
+    /// hold the results.
+    /// </summary>
+    /// <param name="N">BigInteger to convert.</param>
+    /// <param name="bits">Array to hold bits from result.
+    /// If the BigInteger has more bits than this, the higher bits are
+    /// dropped.</param>
+    /// <returns>Array of ones and zeroes. The first element is the low bit of
+    /// the BigInteger.
+    /// The last bit is only the sign bit if the size of the supplied array
+    /// times eight exactly matches the number of bytes returned by
+    /// BigInteger.ToByteArray.
+    /// </returns>
+    public static int[] unpackBigInteger(BigInteger N, int[] bits) {
+        byte[] bytes = N.toByteArray();
+        int bitIndex = 0;
+        for (byte b : bytes) {
+            byte bShift = b;
+            for (int bitInByte = 0; bitInByte < 8 && (bitIndex < bits.length); bitInByte++) {
+                bits[bitIndex++] = bShift & 1;
+                bShift >>= 1;
+            }
+            if (bitIndex >= bits.length)
+                break;
+        }
+        return bits;
+    }
+
+    public static long[] uninterleave(BigInteger grayCode, int bitDepth, int dimensions,
+            boolean reverseOrder) {
+        // TODO: There must be a more efficient way to delaminate, but I can't
+        // figure it out.
+        long[] vector = new long[dimensions];
+        int numBits = dimensions * bitDepth;
+        int[] bits = unpackBigInteger(grayCode, new int[numBits]);
+        int bitIndex = 0;
+        int startDimension = reverseOrder ? dimensions - 1 : 0;
+        int stopDimension = reverseOrder ? -1 : dimensions;
+        int dimIncrement = reverseOrder ? -1 : 1;
+        for (int bitNumber = 0; bitNumber < bitDepth; bitNumber++) {
+            for (int dimension = startDimension; dimension != stopDimension; dimension += dimIncrement) {
+                vector[dimension] = vector[dimension] | (long) (bits[bitIndex++] << bitNumber);
+            }
+        }
+        return vector;
     }
 
 }
