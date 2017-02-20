@@ -20,7 +20,7 @@ public final class Hilbert {
      *            Number of bits per coordinate.
      * @return Point in N-space.
      */
-    public static long[] hilbertAxes(final long[] transposedIndex, final int bits) {
+    public static long[] axes(final long[] transposedIndex, final int bits) {
         final long[] result = transposedIndex.clone();
         final int dims = result.length;
         grayDecode(result, dims);
@@ -64,7 +64,7 @@ public final class Hilbert {
      *            top-level Hilbert curve.
      * @return The Hilbert distance (or index) as a transposed Hilbert index.
      */
-    public static long[] HilbertIndexTransposed(final long[] hilbertAxes, final int bits) {
+    public static long[] transposedIndex(final long[] hilbertAxes, final int bits) {
         final long[] result = hilbertAxes.clone();
         final int dims = hilbertAxes.length;
         final long maxBit = 1L << (bits - 1);
