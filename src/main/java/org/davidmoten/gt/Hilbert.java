@@ -125,9 +125,12 @@ public final class Hilbert {
             short bit = (short) (((vector[indexToUse] >> iFromLongBit) & 1) << iToByteBit);
             shorts[iToByteVector] |= bit;
         }
-        ByteBuffer bb = ByteBuffer.allocate(shorts.length*2);
+        ByteBuffer bb = ByteBuffer.allocate(shorts.length);
+        ByteBuffer b = ByteBuffer.allocate(2);
         for (short sh: shorts) {
-            bb.putShort(sh);
+            b.clear();
+            b.putShort(sh);
+            bb.put(b.get(1));
         }
         return bb.array();
     }
@@ -160,27 +163,27 @@ public final class Hilbert {
         array[index] ^= swap;
     }
 
-    /// <summary>
-    /// Convert a BigInteger into an array of bits.
-    /// </summary>
-    /// <param name="N">BigInteger to convert.</param>
-    /// <returns>Array of ones and zeroes. The first element is the low bit of
-    /// the BigInteger.
-    /// The last bit is the sign bit.
-    /// </returns>
-    public static int[] unpackBigInteger(BigInteger N) {
-        byte[] bytes = N.toByteArray();
-        int[] bits = new int[bytes.length << 3];
-        int bitIndex = 0;
-        for (byte b : bytes) {
-            byte bShift = b;
-            for (int bitInByte = 0; bitInByte < 8; bitInByte++) {
-                bits[bitIndex++] = bShift & 1;
-                bShift >>= 1;
-            }
-        }
-        return bits;
-    }
+//    /// <summary>
+//    /// Convert a BigInteger into an array of bits.
+//    /// </summary>
+//    /// <param name="N">BigInteger to convert.</param>
+//    /// <returns>Array of ones and zeroes. The first element is the low bit of
+//    /// the BigInteger.
+//    /// The last bit is the sign bit.
+//    /// </returns>
+//    public static int[] unpackBigInteger(BigInteger N) {
+//        byte[] bytes = N.toByteArray();
+//        int[] bits = new int[bytes.length << 3];
+//        int bitIndex = 0;
+//        for (byte b : bytes) {
+//            byte bShift = b;
+//            for (int bitInByte = 0; bitInByte < 8; bitInByte++) {
+//                bits[bitIndex++] = bShift & 1;
+//                bShift >>= 1;
+//            }
+//        }
+//        return bits;
+//    }
 
     /// <summary>
     /// Convert a BigInteger into an array of bits using the supplied array to
@@ -200,7 +203,7 @@ public final class Hilbert {
         byte[] bytes = N.toByteArray();
         int bitIndex = 0;
         for (byte b : bytes) {
-            byte bShift = b;
+            int bShift = Byte.toUnsignedInt(b);
             for (int bitInByte = 0; bitInByte < 8 && (bitIndex < bits.length); bitInByte++) {
                 bits[bitIndex++] = bShift & 1;
                 bShift >>= 1;
@@ -230,4 +233,9 @@ public final class Hilbert {
         return vector;
     }
 
+    public static void main(String[] args) {
+        System.out.println((byte) 255);
+        System.out.println(Byte.toUnsignedInt((byte) 255));
+    }
+    
 }

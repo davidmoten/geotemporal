@@ -22,7 +22,7 @@ public class HilbertTest {
     @Test
     public void test() throws IOException {
         // TODO works for bits <= 4
-        int bits = 2;
+        int bits = 5;
         Map<BigInteger, long[]> map = new TreeMap<>();
         final long N = 1L << bits;
         for (long i = 0; i < N; i++) {

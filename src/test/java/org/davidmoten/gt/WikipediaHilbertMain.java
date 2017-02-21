@@ -54,7 +54,7 @@ public class WikipediaHilbertMain {
 
     // convert d to (x,y)
     // n is pow(2, bits)
-    private static long[] d2xy(long n, long d, long[] point) {
+    private static long[] d2xy(int n, long d, long[] point) {
         long rx, ry;
         long s, t = d;
         point[0] = 0;
