@@ -1,6 +1,7 @@
 package org.davidmoten.gt;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
 public final class Hilbert {
 
@@ -77,6 +78,11 @@ public final class Hilbert {
         byte[] interleavedBytes = interleave(transposedIndex, bits, reverseOrder);
         return new BigInteger(interleavedBytes);
     }
+    
+    public static BigInteger toIndex(long[] point, int bits, boolean reverseOrder) {
+        return Hilbert.untranspose(Hilbert.transposedIndex(point, bits), bits,
+                reverseOrder);
+    }
 
     /// <summary>
     /// Interleave the bits of an unsigned vector and generate a byte array in
@@ -103,25 +109,27 @@ public final class Hilbert {
         // in order to be useful when creating a BigInteger.
         int dimensions = vector.length; // Pull member access out of loop!
         int bytesNeeded = (bitDepth * dimensions) >> 3;
-        byte[] byteVector = new byte[bytesNeeded + 1]; // BigInteger seems to
+        short[] shorts = new short[bytesNeeded + 1]; // BigInteger seems to
                                                        // need an extra, zero
                                                        // byte at the end. Might
                                                        // be for the sign bit.
         int numBits = dimensions * bitDepth;
 
         for (int iBit = 0; iBit < numBits; iBit++) {
-            int iFromUintVector = iBit % dimensions;
-            int iFromUintBit = iBit / dimensions;
+            int iFromLongVector = iBit % dimensions;
+            int iFromLongBit = iBit / dimensions;
             int iToByteVector = iBit >> 3;
             int iToByteBit = iBit & 0x7;
 
-            reverseOrder = false; // DEBUG
-            int indexToUse = reverseOrder ? dimensions - iFromUintVector - 1 : iFromUintVector;
-
-            byte bit = (byte) (((vector[indexToUse] >> iFromUintBit) & 1) << iToByteBit);
-            byteVector[iToByteVector] |= bit;
+            int indexToUse = reverseOrder ? dimensions - iFromLongVector - 1 : iFromLongVector;
+            short bit = (short) (((vector[indexToUse] >> iFromLongBit) & 1) << iToByteBit);
+            shorts[iToByteVector] |= bit;
         }
-        return byteVector;
+        ByteBuffer bb = ByteBuffer.allocate(shorts.length*2);
+        for (short sh: shorts) {
+            bb.putShort(sh);
+        }
+        return bb.array();
     }
 
     private static void inverseUndo(final long[] result, final int dims, final long maxBit) {
