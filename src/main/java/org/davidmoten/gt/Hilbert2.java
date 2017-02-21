@@ -1,7 +1,6 @@
 package org.davidmoten.gt;
 
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.BitSet;
 
@@ -106,10 +105,26 @@ public class Hilbert2 {
         return X;
     }
 
+    private static BigInteger index(long[] a, int bits) {
+        BitSet b = new BitSet();
+        int bi = 0;
+        for (int i = 0; i < bits; i++) {
+            for (int j = a.length - 1; j >= 0; j--) {
+                b.set(bi, (a[j] & (1 << i)) != 0);
+                bi++;
+            }
+        }
+        if (b.isEmpty())
+            return BigInteger.ZERO;
+        else
+            return new BigInteger(b.toByteArray());
+    }
+
     public static void main(String[] args) {
-        long[] p = { 0, 0 };
+        long[] p = { 0, 1 };
+        int bits = 2;
         long[] ti = transposedIndex(p, 1);
         System.out.println(Arrays.toString(ti));
-//        System.out.println(untranspose(ti));
+        System.out.println(index(ti, bits));
     }
 }
