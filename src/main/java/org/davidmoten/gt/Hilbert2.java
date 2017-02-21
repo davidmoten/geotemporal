@@ -106,7 +106,7 @@ public class Hilbert2 {
     }
 
     private static BigInteger index(long[] transposedIndex, int bits) {
-        BitSet b = new BitSet(transposedIndex.length * bits + 1);
+        BitSet b = new BitSet(transposedIndex.length * bits);
         int bIndex = 0;
         long mask = 1;
         for (int i = 0; i < bits; i++) {
