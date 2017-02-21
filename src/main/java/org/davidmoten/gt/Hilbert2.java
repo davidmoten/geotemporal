@@ -106,13 +106,13 @@ public class Hilbert2 {
     }
 
     private static BigInteger index(long[] transposedIndex, int bits) {
-        BitSet b = new BitSet(transposedIndex.length * bits);
-        int bi = 0;
+        BitSet b = new BitSet(transposedIndex.length * bits + 1);
+        int bIndex = 0;
         int mask = 1;
         for (int i = 0; i < bits; i++) {
             for (int j = transposedIndex.length - 1; j >= 0; j--) {
-                b.set(bi, (transposedIndex[j] & mask) != 0);
-                bi++;
+                b.set(bIndex, (transposedIndex[j] & mask) != 0);
+                bIndex++;
             }
             mask <<= 1;
         }
@@ -123,10 +123,15 @@ public class Hilbert2 {
     }
 
     public static void main(String[] args) {
-        long[] p = { 1, 1 };
-        int bits = 2;
-        long[] ti = transposedIndex(p, bits);
-        System.out.println(Arrays.toString(ti));
-        System.out.println(index(ti, bits));
+        int bits = 4;
+        int n = 2 << (bits - 1);
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                long[] q = { i, j };
+                System.out.print(index(transposedIndex(q, bits), bits));
+                System.out.print("\t");
+            }
+            System.out.println();
+        }
     }
 }
