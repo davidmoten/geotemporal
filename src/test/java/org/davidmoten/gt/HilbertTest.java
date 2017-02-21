@@ -61,14 +61,33 @@ public class HilbertTest {
         assertEquals(6, Hilbert.toIndex(new long[] { 0, 16 }, 5, true).intValue());
     }
 
-    public static void main(String[] args) {
-        int bits = 5;
+    public static void main(String[] args) throws IOException {
+        int bits = 6;
         int n = 1 << bits;
         for (int i = 0; i < n*n; i++) {
             int[] point = { 0, 0 };
             d2xy(n, i, point);
             System.out.println(i + "\t" + Arrays.toString(point));
         }
+        int width = 600;
+        int height = width;
+        BufferedImage b = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = b.createGraphics();
+        g.setPaint(Color.black);
+        g.setStroke(new BasicStroke(2f));
+        int margin = 10;
+        int x = margin;
+        int y = margin;
+        for (int i=0;i<n*n;i++) {
+            int[] point = new int[2];
+            d2xy(n, i, point);
+            int x2 = (int) Math.round((double) point[0] / (n - 1) * (width - 2 * margin) + margin);
+            int y2 = (int) Math.round((double) point[1] / (n - 1) * (height - 2 * margin) + margin);
+            g.drawLine(x, y, x2, y2);
+            x = x2;
+            y = y2;
+        }
+        ImageIO.write(b, "PNG", new File("target/image.png"));
     }
     
     private static int xy2d(int n, int[] point) {
