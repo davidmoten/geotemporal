@@ -34,30 +34,31 @@ public class Hilbert2 {
     /// <returns>Coordinate vector.</returns>
     public static long[] point(long[] transposedIndex, int bits) {
 
-        long[] X = Arrays.copyOf(transposedIndex, transposedIndex.length);
-        int n = X.length; // n: Number of dimensions
-        long N = 2L << (bits - 1), P, Q, t;
+        final long N = 2L << (bits - 1);
+        long[] x = Arrays.copyOf(transposedIndex, transposedIndex.length);
+        int n = x.length; // n: Number of dimensions
+        long p, q, t;
         int i;
         // Gray decode by H ^ (H/2)
-        t = X[n - 1] >> 1;
+        t = x[n - 1] >> 1;
         // Corrected error in Skilling's paper on the following line. The
         // appendix had i >= 0 leading to negative array index.
         for (i = n - 1; i > 0; i--)
-            X[i] ^= X[i - 1];
-        X[0] ^= t;
+            x[i] ^= x[i - 1];
+        x[0] ^= t;
         // Undo excess work
-        for (Q = 2; Q != N; Q <<= 1) {
-            P = Q - 1;
+        for (q = 2; q != N; q <<= 1) {
+            p = q - 1;
             for (i = n - 1; i >= 0; i--)
-                if ((X[i] & Q) != 0L)
-                    X[0] ^= P; // invert
+                if ((x[i] & q) != 0L)
+                    x[0] ^= p; // invert
                 else {
-                    t = (X[0] ^ X[i]) & P;
-                    X[0] ^= t;
-                    X[i] ^= t;
+                    t = (x[0] ^ x[i]) & p;
+                    x[0] ^= t;
+                    x[i] ^= t;
                 }
         } // exchange
-        return X;
+        return x;
     }
 
     /// <summary>
@@ -76,33 +77,34 @@ public class Hilbert2 {
     /// <returns>The Hilbert distance (or index) as a transposed Hilbert
     /// index.</returns>
     public static long[] transposedIndex(long[] point, int bits) {
-        long[] X = Arrays.copyOf(point, point.length);
+        final long M = 1L << (bits - 1);
+        long[] x = Arrays.copyOf(point, point.length);
         int n = point.length; // n: Number of dimensions
-        long M = 1L << (bits - 1), P, Q, t;
+        long p, q, t;
         int i;
         // Inverse undo
-        for (Q = M; Q > 1; Q >>= 1) {
-            P = Q - 1;
+        for (q = M; q > 1; q >>= 1) {
+            p = q - 1;
             for (i = 0; i < n; i++)
-                if ((X[i] & Q) != 0)
-                    X[0] ^= P; // invert
+                if ((x[i] & q) != 0)
+                    x[0] ^= p; // invert
                 else {
-                    t = (X[0] ^ X[i]) & P;
-                    X[0] ^= t;
-                    X[i] ^= t;
+                    t = (x[0] ^ x[i]) & p;
+                    x[0] ^= t;
+                    x[i] ^= t;
                 }
         } // exchange
           // Gray encode
         for (i = 1; i < n; i++)
-            X[i] ^= X[i - 1];
+            x[i] ^= x[i - 1];
         t = 0;
-        for (Q = M; Q > 1; Q >>= 1)
-            if ((X[n - 1] & Q) != 0)
-                t ^= Q - 1;
+        for (q = M; q > 1; q >>= 1)
+            if ((x[n - 1] & q) != 0)
+                t ^= q - 1;
         for (i = 0; i < n; i++)
-            X[i] ^= t;
+            x[i] ^= t;
 
-        return X;
+        return x;
     }
 
     private static BigInteger index(long[] transposedIndex, int bits) {
