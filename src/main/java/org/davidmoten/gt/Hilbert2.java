@@ -108,15 +108,16 @@ public class Hilbert2 {
     }
 
     private static BigInteger index(long[] transposedIndex, int bits) {
-        BitSet b = new BitSet(transposedIndex.length * bits);
-        int bIndex = 0;
-        long mask = 1;
+        int length = transposedIndex.length * bits;
+        BitSet b = new BitSet(length);
+        int bIndex = length - 1;
+        long mask = 1 << (bits-1);
         for (int i = 0; i < bits; i++) {
-            for (int j = transposedIndex.length - 1; j >= 0; j--) {
+            for (int j = 0; j < transposedIndex.length; j++) {
                 b.set(bIndex, (transposedIndex[j] & mask) != 0);
-                bIndex++;
+                bIndex--;
             }
-            mask <<= 1;
+            mask >>= 1;
         }
         if (b.isEmpty())
             return BigInteger.ZERO;
