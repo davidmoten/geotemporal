@@ -160,6 +160,13 @@ public final class HilbertCurve {
         return toBigInteger(bits, transposedIndex_(bits, point));
     }
 
+    // Quote from Paul Chernoch
+    // Interleaving means take one bit from the first matrix element, one bit
+    // from the next, etc, then take the second bit from the first matrix
+    // element, second bit from the second, all the way to the last bit of the
+    // last element. Combine those bits in that order into a single BigInteger,
+    // which can have as many bits as necessary. This converts the array into a
+    // single number.
     static BigInteger toBigInteger(int bits, long... transposedIndex) {
         int length = transposedIndex.length * bits;
         BitSet b = new BitSet(length);
