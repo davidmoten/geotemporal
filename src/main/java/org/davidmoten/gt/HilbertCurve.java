@@ -122,10 +122,10 @@ public final class HilbertCurve {
      * @return The Hilbert distance (or index) as a transposed Hilbert index
      */
     public long[] transposedIndex(long... point) {
-        return transposedIndex(bits, point);
+        return transposedIndex_(bits, point);
     }
 
-    static long[] transposedIndex(int bits, long... point) {
+    static long[] transposedIndex_(int bits, long... point) {
         final long M = 1L << (bits - 1);
         long[] x = Arrays.copyOf(point, point.length);
         int n = point.length; // n: Number of dimensions
@@ -161,7 +161,7 @@ public final class HilbertCurve {
     }
 
     static BigInteger index(int bits, long... point) {
-        return toBigInteger(bits, transposedIndex(bits, point));
+        return toBigInteger(bits, transposedIndex_(bits, point));
     }
 
     static BigInteger toBigInteger(int bits, long... transposedIndex) {
@@ -197,10 +197,21 @@ public final class HilbertCurve {
         byte[] bytes = index.toByteArray();
         HilbertCurve.reverse(bytes);
         BitSet b = BitSet.valueOf(bytes);
+        for (int i = 0; i < b.length(); i++) {
+            System.out.println("bit " + i + "=" + b.get(i));
+        }
         long[] x = new long[dimensions];
         for (int idx = b.length() - 1; idx >= 0; idx--) {
             int dim = (length - idx) % dimensions;
-            x[dim] |= (b.get(idx) ? 1L : 0L) << ((idx - 1) / dimensions + 1);
+            if (b.get(idx)) {
+                int shift;
+                if (idx > 0) {
+                    shift = (idx - 1) / dimensions + 1;
+                } else {
+                    shift = 0;
+                }
+                x[dim] |= 1 << shift;
+            }
         }
         return x;
     }

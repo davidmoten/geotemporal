@@ -86,18 +86,26 @@ public class HilbertCurveTest {
         for (long i = 0; i < Math.round(Math.pow(2, bits)); i++) {
             System.out.println(i + "\t" + Arrays.toString(c.point(BigInteger.valueOf(i))));
         }
-        check(1, 0, 0, 0);
-        check(1, 1, 0, 1);
-        check(1, 2, 1, 1);
-        check(1, 3, 1, 0);
+        checkRoundTrip(1, 0);
+        checkRoundTrip(1, 1);
+        checkRoundTrip(1, 2);
+        checkRoundTrip(1, 3);
     }
 
-    private static void check(int bits, long value, long x, long y) {
+    @Test
+    public void testPointFromIndexBits1Point0_1() {
+        HilbertCurve c = HilbertCurve.bits(1).dimensions(2);
+        long[] ti = c.transposedIndex(0, 1);
+        assertEquals("0,1", ti[0] + "," + ti[1]);
+        long[] ti2 = HilbertCurve.transpose(1, 2, BigInteger.valueOf(1));
+        assertEquals("0,1", ti2[0] + "," + ti2[1]);
+    }
+
+    private static void checkRoundTrip(int bits, long value) {
         HilbertCurve c = HilbertCurve.bits(bits).dimensions(2);
         long[] point = c.point(BigInteger.valueOf(value));
         assertEquals(2, point.length);
-        assertEquals(x, point[0]);
-        assertEquals(y, point[1]);
+        assertEquals(value, c.index(point).intValue());
     }
 
 }
