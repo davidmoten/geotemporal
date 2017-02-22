@@ -24,11 +24,11 @@ import java.util.BitSet;
  * Note: This algorithm is derived from work done by John Skilling and published
  * in "Programming the Hilbert curve". (c) 2004 American Institute of Physics.
  */
-public final class Hilbert {
+public final class HilbertCurve {
 
     private final int bits;
 
-    private Hilbert(int bits) {
+    private HilbertCurve(int bits) {
         this.bits = bits;
     }
 
@@ -41,8 +41,8 @@ public final class Hilbert {
      *            top-level Hilbert curve
      * @return object to do transformations with the Hilbert Curve
      */
-    public static Hilbert createWithBits(int bits) {
-        return new Hilbert(bits);
+    public static HilbertCurve createWithBits(int bits) {
+        return new HilbertCurve(bits);
     }
 
     /**
@@ -100,15 +100,15 @@ public final class Hilbert {
      * <p>
      * Note: In Skilling's paper, this function is called AxestoTranspose.
      * 
-     * @param bits
-     *            depth of the Hilbert curve. If bits is one, this is the
-     *            top-level Hilbert curve
      * @param point
      *            Point in N-space
      * @return The Hilbert distance (or index) as a transposed Hilbert index
      */
+    public long[] transposedIndex(long... point) {
+        return transposedIndex(bits, point);
+    }
 
-    public static long[] transposedIndex(int bits, long... point) {
+    static long[] transposedIndex(int bits, long... point) {
         final long M = 1L << (bits - 1);
         long[] x = Arrays.copyOf(point, point.length);
         int n = point.length; // n: Number of dimensions
@@ -139,7 +139,11 @@ public final class Hilbert {
         return x;
     }
 
-    public static BigInteger index(int bits, long... point) {
+    public BigInteger index(long... point) {
+        return index(bits, point);
+    }
+
+    static BigInteger index(int bits, long... point) {
         return toBigInteger(bits, transposedIndex(bits, point));
     }
 
