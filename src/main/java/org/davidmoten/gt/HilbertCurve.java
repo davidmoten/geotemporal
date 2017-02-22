@@ -195,24 +195,16 @@ public final class HilbertCurve {
         return point(transpose(index));
     }
 
-    long[] transpose(BigInteger index) {
+    public long[] transpose(BigInteger index) {
         int length = dimensions * bits;
         byte[] bytes = index.toByteArray();
         Util.reverse(bytes);
         BitSet b = BitSet.valueOf(bytes);
-        for (int i = 0; i < b.length(); i++) {
-            System.out.println("bit " + i + "=" + b.get(i));
-        }
         long[] x = new long[dimensions];
-        for (int idx = b.length() - 1; idx >= 0; idx--) {
-            int dim = (length - idx) % dimensions;
+        for (int idx = 0; idx < b.length(); idx++) {
             if (b.get(idx)) {
-                int shift;
-                if (idx > 0) {
-                    shift = (idx - 1) / dimensions + 1;
-                } else {
-                    shift = 0;
-                }
+                int dim = (length - idx + 1) % dimensions;
+                int shift = (idx / dimensions) % bits;
                 x[dim] |= 1 << shift;
             }
         }

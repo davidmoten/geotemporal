@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 public class HilbertCurveTest {
@@ -54,7 +55,7 @@ public class HilbertCurveTest {
 
     @Test
     public void test5() {
-        int bits = 1;
+        int bits = 5;
         HilbertCurve c = HilbertCurve.bits(bits).dimensions(2);
         int n = 2 << (bits - 1);
         for (int i = 0; i < n; i++) {
@@ -71,8 +72,8 @@ public class HilbertCurveTest {
         HilbertCurve c = HilbertCurve.bits(5).dimensions(2);
         long[] ti = c.transpose(BigInteger.valueOf(256));
         assertEquals(2, ti.length);
-        assertEquals(16, ti[0]);
-        assertEquals(0, ti[1]);
+        assertEquals(0, ti[0]);
+        assertEquals(16, ti[1]);
     }
 
     @Test
@@ -91,10 +92,21 @@ public class HilbertCurveTest {
         for (long i = 0; i < Math.round(Math.pow(2, bits)); i++) {
             System.out.println(i + "\t" + Arrays.toString(c.point(BigInteger.valueOf(i))));
         }
-        checkRoundTrip(1, 0);
-        checkRoundTrip(1, 1);
-        checkRoundTrip(1, 2);
-        checkRoundTrip(1, 3);
+    }
+
+    @Test
+    public void testRoundTrips() {
+        boolean failed = false;
+        for (int bits = 1; bits <= 3; bits++) {
+            for (long i = 0; i < Math.pow(2, bits + 1); i++) {
+                if (!checkRoundTrip(bits, i)) {
+                    System.out.println("failed round trip for bits=" + bits + ", index=" + i);
+                    failed = true;
+                }
+            }
+        }
+        if (failed)
+            Assert.fail("round trips failed (listed in log)");
     }
 
     @Test
@@ -117,11 +129,11 @@ public class HilbertCurveTest {
         assertEquals("1,0", ti2[0] + "," + ti2[1]);
     }
 
-    private static void checkRoundTrip(int bits, long value) {
+    private static boolean checkRoundTrip(int bits, long value) {
         HilbertCurve c = HilbertCurve.bits(bits).dimensions(2);
         long[] point = c.point(BigInteger.valueOf(value));
         assertEquals(2, point.length);
-        assertEquals(value, c.index(point).intValue());
+        return value == c.index(point).intValue();
     }
 
 }
