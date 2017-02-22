@@ -13,12 +13,14 @@ public class HilbertCurveTest {
 
     @Test
     public void testIndex1() {
-        assertEquals(7, HilbertCurve.index(2, 1, 2).intValue());
+        HilbertCurve c = HilbertCurve.bits(2).dimensions(2);
+        assertEquals(7, c.index(1, 2).intValue());
     }
 
     @Test
     public void testIndex2() {
-        assertEquals(256, HilbertCurve.index(5, 0, 16).intValue());
+        HilbertCurve c = HilbertCurve.bits(5).dimensions(2);
+        assertEquals(256, c.index(0, 16).intValue());
     }
 
     @Test
@@ -53,10 +55,11 @@ public class HilbertCurveTest {
     @Test
     public void test5() {
         int bits = 1;
+        HilbertCurve c = HilbertCurve.bits(bits).dimensions(2);
         int n = 2 << (bits - 1);
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                System.out.print(HilbertCurve.index(bits, i, j));
+                System.out.print(c.index(i, j));
                 System.out.print("\t");
             }
             System.out.println();
@@ -99,6 +102,7 @@ public class HilbertCurveTest {
         HilbertCurve c = HilbertCurve.bits(1).dimensions(2);
         long[] ti = c.transposedIndex(0, 1);
         assertEquals("0,1", ti[0] + "," + ti[1]);
+        assertEquals(1, c.index(0, 1));
         long[] ti2 = c.transpose(BigInteger.valueOf(1));
         assertEquals("0,1", ti2[0] + "," + ti2[1]);
     }

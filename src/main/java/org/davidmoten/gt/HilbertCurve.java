@@ -157,10 +157,6 @@ public final class HilbertCurve {
     }
 
     public BigInteger index(long... point) {
-        return index(bits, point);
-    }
-
-    static BigInteger index(int bits, long... point) {
         return toBigInteger(bits, transposedIndex_(bits, point));
     }
 
