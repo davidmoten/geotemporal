@@ -32,21 +32,21 @@ public class HilbertCurveTest {
         BitSet b = new BitSet(10);
         b.set(8);
         byte[] a = b.toByteArray();
-        HilbertCurve.reverse(a);
+        Util.reverse(a);
         assertEquals(256, new BigInteger(1, a).intValue());
     }
 
     @Test
     public void testReverseOddNumberOfElements() {
         byte[] bytes = { 1, 2, 3, 4, 5 };
-        HilbertCurve.reverse(bytes);
+        Util.reverse(bytes);
         assertArrayEquals(new byte[] { 5, 4, 3, 2, 1 }, bytes);
     }
 
     @Test
     public void testReverseEventNumberOfElements() {
         byte[] bytes = { 1, 2, 3, 4, 5, 6 };
-        HilbertCurve.reverse(bytes);
+        Util.reverse(bytes);
         assertArrayEquals(new byte[] { 6, 5, 4, 3, 2, 1 }, bytes);
     }
 
@@ -65,7 +65,8 @@ public class HilbertCurveTest {
 
     @Test
     public void testTranspose() {
-        long[] ti = HilbertCurve.transpose(5, 2, BigInteger.valueOf(256));
+        HilbertCurve c = HilbertCurve.bits(5).dimensions(2);
+        long[] ti = c.transpose(BigInteger.valueOf(256));
         assertEquals(2, ti.length);
         assertEquals(16, ti[0]);
         assertEquals(0, ti[1]);
@@ -73,7 +74,8 @@ public class HilbertCurveTest {
 
     @Test
     public void testTransposeZero() {
-        long[] ti = HilbertCurve.transpose(5, 2, BigInteger.valueOf(0));
+        HilbertCurve c = HilbertCurve.bits(5).dimensions(2);
+        long[] ti = c.transpose(BigInteger.valueOf(0));
         assertEquals(2, ti.length);
         assertEquals(0, ti[0]);
         assertEquals(0, ti[1]);
@@ -97,7 +99,7 @@ public class HilbertCurveTest {
         HilbertCurve c = HilbertCurve.bits(1).dimensions(2);
         long[] ti = c.transposedIndex(0, 1);
         assertEquals("0,1", ti[0] + "," + ti[1]);
-        long[] ti2 = HilbertCurve.transpose(1, 2, BigInteger.valueOf(1));
+        long[] ti2 = c.transpose(BigInteger.valueOf(1));
         assertEquals("0,1", ti2[0] + "," + ti2[1]);
     }
 

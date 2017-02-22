@@ -183,19 +183,19 @@ public final class HilbertCurve {
         else {
             byte[] bytes = b.toByteArray();
             // make Big Endian
-            reverse(bytes);
+            Util.reverse(bytes);
             return new BigInteger(1, bytes);
         }
     }
 
     public long[] point(BigInteger index) {
-        return point(transpose(bits, dimensions, index));
+        return point(transpose(index));
     }
 
-    static long[] transpose(int bits, int dimensions, BigInteger index) {
+    long[] transpose(BigInteger index) {
         int length = dimensions * bits;
         byte[] bytes = index.toByteArray();
-        HilbertCurve.reverse(bytes);
+        Util.reverse(bytes);
         BitSet b = BitSet.valueOf(bytes);
         for (int i = 0; i < b.length(); i++) {
             System.out.println("bit " + i + "=" + b.get(i));
@@ -214,23 +214,6 @@ public final class HilbertCurve {
             }
         }
         return x;
-    }
-
-    // visible for testing
-    static void reverse(byte[] array) {
-        if (array == null) {
-            return;
-        }
-        int i = 0;
-        int j = array.length - 1;
-        byte tmp;
-        while (j > i) {
-            tmp = array[j];
-            array[j] = array[i];
-            array[i] = tmp;
-            j--;
-            i++;
-        }
     }
 
 }
