@@ -23,26 +23,43 @@ import java.util.BitSet;
  * <p>
  * Note: This algorithm is derived from work done by John Skilling and published
  * in "Programming the Hilbert curve". (c) 2004 American Institute of Physics.
+ * With thanks also to Paul Chernoch who published a C# algorithm for Skilling's
+ * work on StackOverflow and
+ * <a href="https://github.com/paulchernoch/HilbertTransformation">GitHub</a>).
  */
 public final class HilbertCurve {
 
     private final int bits;
+    private final int dimensions;
 
-    private HilbertCurve(int bits) {
+    private HilbertCurve(int bits, int dimensions) {
         this.bits = bits;
+        this.dimensions = dimensions;
     }
 
     /**
-     * Returns an instance for performing transformations for a Hilbert curve
-     * with the given number of bits.
+     * Returns a builder for and object that performs transformations for a
+     * Hilbert curve with the given number of bits.
      * 
      * @param bits
      *            depth of the Hilbert curve. If bits is one, this is the
      *            top-level Hilbert curve
-     * @return object to do transformations with the Hilbert Curve
+     * @return builder for object to do transformations with the Hilbert Curve
      */
-    public static HilbertCurve createWithBits(int bits) {
-        return new HilbertCurve(bits);
+    public static HilbertCurveBuilder bits(int bits) {
+        return new HilbertCurveBuilder(bits);
+    }
+
+    public static class HilbertCurveBuilder {
+        final int bits;
+
+        private HilbertCurveBuilder(int bits) {
+            this.bits = bits;
+        }
+
+        public HilbertCurve dimensions(int dimensions) {
+            return new HilbertCurve(bits, dimensions);
+        }
     }
 
     /**
@@ -169,6 +186,23 @@ public final class HilbertCurve {
             reverse(bytes);
             return new BigInteger(1, bytes);
         }
+    }
+
+    public long[] point(BigInteger index) {
+        return point(transpose(bits, dimensions, index));
+    }
+
+    static long[] transpose(int bits, int dimensions, BigInteger index) {
+        int length = dimensions * bits;
+        byte[] bytes = index.toByteArray();
+        HilbertCurve.reverse(bytes);
+        BitSet b = BitSet.valueOf(bytes);
+        long[] x = new long[dimensions];
+        for (int idx = b.length() - 1; idx >= 0; idx--) {
+            int dim = (length - idx) % dimensions;
+            x[dim] |= (b.get(idx) ? 1L : 0L) << ((idx - 1) / dimensions + 1);
+        }
+        return x;
     }
 
     // visible for testing

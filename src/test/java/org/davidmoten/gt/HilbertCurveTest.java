@@ -4,6 +4,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.BitSet;
 
 import org.junit.Test;
@@ -51,7 +52,7 @@ public class HilbertCurveTest {
 
     @Test
     public void test5() {
-        int bits = 5;
+        int bits = 1;
         int n = 2 << (bits - 1);
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -60,6 +61,43 @@ public class HilbertCurveTest {
             }
             System.out.println();
         }
+    }
+
+    @Test
+    public void testTranspose() {
+        long[] ti = HilbertCurve.transpose(5, 2, BigInteger.valueOf(256));
+        assertEquals(2, ti.length);
+        assertEquals(16, ti[0]);
+        assertEquals(0, ti[1]);
+    }
+
+    @Test
+    public void testTransposeZero() {
+        long[] ti = HilbertCurve.transpose(5, 2, BigInteger.valueOf(0));
+        assertEquals(2, ti.length);
+        assertEquals(0, ti[0]);
+        assertEquals(0, ti[1]);
+    }
+
+    @Test
+    public void testPointFromIndexBits1() {
+        int bits = 2;
+        HilbertCurve c = HilbertCurve.bits(bits).dimensions(2);
+        for (long i = 0; i < Math.round(Math.pow(2, bits)); i++) {
+            System.out.println(i + "\t" + Arrays.toString(c.point(BigInteger.valueOf(i))));
+        }
+        check(1, 0, 0, 0);
+        check(1, 1, 0, 1);
+        check(1, 2, 1, 1);
+        check(1, 3, 1, 0);
+    }
+
+    private static void check(int bits, long value, long x, long y) {
+        HilbertCurve c = HilbertCurve.bits(bits).dimensions(2);
+        long[] point = c.point(BigInteger.valueOf(value));
+        assertEquals(2, point.length);
+        assertEquals(x, point[0]);
+        assertEquals(y, point[1]);
     }
 
 }
