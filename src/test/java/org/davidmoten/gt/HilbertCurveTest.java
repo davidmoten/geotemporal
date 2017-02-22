@@ -102,9 +102,19 @@ public class HilbertCurveTest {
         HilbertCurve c = HilbertCurve.bits(1).dimensions(2);
         long[] ti = c.transposedIndex(0, 1);
         assertEquals("0,1", ti[0] + "," + ti[1]);
-        assertEquals(1, c.index(0, 1));
+        assertEquals(1, c.index(0, 1).intValue());
         long[] ti2 = c.transpose(BigInteger.valueOf(1));
         assertEquals("0,1", ti2[0] + "," + ti2[1]);
+    }
+
+    @Test
+    public void testPointFromIndexBits1Point1_1() {
+        HilbertCurve c = HilbertCurve.bits(1).dimensions(2);
+        long[] ti = c.transposedIndex(1, 1);
+        assertEquals("1,0", ti[0] + "," + ti[1]);
+        assertEquals(2, c.index(1, 1).intValue());
+        long[] ti2 = c.transpose(BigInteger.valueOf(2));
+        assertEquals("1,0", ti2[0] + "," + ti2[1]);
     }
 
     private static void checkRoundTrip(int bits, long value) {
