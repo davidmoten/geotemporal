@@ -1,241 +1,187 @@
 package org.davidmoten.gt;
 
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.BitSet;
 
+/**
+ * Converts between Hilbert index (transposed and {@code BigInteger}) and
+ * N-dimensional points.
+ * 
+ * The Hilbert index is expressed as an array of transposed bits.
+ * 
+ * <pre>
+  Example: 5 bits for each of n=3 coordinates.
+     15-bit Hilbert integer = A B C D E F G H I J K L M N O is stored
+     as its Transpose                        ^
+     X[0] = A D G J M                    X[2]|  7
+     X[1] = B E H K N        <------->       | /X[1]
+     X[2] = C F I L O                   axes |/
+            high low                         0------> X[0]
+ * </pre>
+ * 
+ * <p>
+ * Note: This algorithm is derived from work done by John Skilling and published
+ * in "Programming the Hilbert curve". (c) 2004 American Institute of Physics.
+ */
 public final class Hilbert {
 
-    private Hilbert() {
-        // prevent instantiation
+    private final int bits;
+
+    private Hilbert(int bits) {
+        this.bits = bits;
     }
 
     /**
-     * Convert the Hilbert index into an N-dimensional point expressed as a
-     * vector of uints.
-     *
-     * Note: In Skilling's paper, this function is named TransposetoAxes.
+     * Returns an instance for performing transformations for a Hilbert curve
+     * with the given number of bits.
+     * 
+     * @param bits
+     *            depth of the Hilbert curve. If bits is one, this is the
+     *            top-level Hilbert curve
+     * @return object to do transformations with the Hilbert Curve
+     */
+    public static Hilbert createWithBits(int bits) {
+        return new Hilbert(bits);
+    }
+
+    /**
+     * Converts the Hilbert transposed index into an N-dimensional point
+     * expressed as a vector of {@code long}.
+     * 
+     * In Skilling's paper this function is named {@code TransposeToAxes}
      * 
      * @param transposedIndex
-     *            The Hilbert index stored in transposed form.
-     * @param bits
-     *            Number of bits per coordinate.
-     * @return Point in N-space.
+     * @return the coordinates of the point represented by the transposed index
+     *         on the Hilbert curve
      */
-    public static long[] point(final long[] transposedIndex, final int bits) {
-        final long[] result = transposedIndex.clone();
-        final int dims = result.length;
-        grayDecode(result, dims);
-        undoExcessWork(result, dims, bits);
-        return result;
+    public long[] point(long... transposedIndex) {
+        return point(bits, transposedIndex);
     }
 
-    private static void grayDecode(final long[] result, final int dims) {
-        final long swap = result[dims - 1] >>> 1;
+    static long[] point(int bits, long... transposedIndex) {
+
+        final long N = 2L << (bits - 1);
+        long[] x = Arrays.copyOf(transposedIndex, transposedIndex.length);
+        int n = x.length; // n: Number of dimensions
+        long p, q, t;
+        int i;
+        // Gray decode by H ^ (H/2)
+        t = x[n - 1] >> 1;
         // Corrected error in Skilling's paper on the following line. The
         // appendix had i >= 0 leading to negative array index.
-        for (int i = dims - 1; i > 0; i--)
-            result[i] ^= result[i - 1];
-        result[0] ^= swap;
-    }
-
-    private static void undoExcessWork(final long[] result, final int dims, final int bits) {
-        for (long bit = 2, n = 1; n != bits; bit <<= 1, ++n) {
-            final long mask = bit - 1;
-            for (int i = dims - 1; i >= 0; i--)
-                if ((result[i] & bit) != 0)
-                    result[0] ^= mask; // invert
-                else
-                    swapBits(result, mask, i);
-        }
+        for (i = n - 1; i > 0; i--)
+            x[i] ^= x[i - 1];
+        x[0] ^= t;
+        // Undo excess work
+        for (q = 2; q != N; q <<= 1) {
+            p = q - 1;
+            for (i = n - 1; i >= 0; i--)
+                if ((x[i] & q) != 0L)
+                    x[0] ^= p; // invert
+                else {
+                    t = (x[0] ^ x[i]) & p;
+                    x[0] ^= t;
+                    x[i] ^= t;
+                }
+        } // exchange
+        return x;
     }
 
     /**
+     * <p>
      * Given the axes (coordinates) of a point in N-Dimensional space, find the
      * distance to that point along the Hilbert curve. That distance will be
      * transposed; broken into pieces and distributed into an array.
      *
+     * <p>
      * The number of dimensions is the length of the hilbertAxes array.
      *
+     * <p>
      * Note: In Skilling's paper, this function is called AxestoTranspose.
      * 
-     * @param point
-     *            Point in N-space.
      * @param bits
-     *            Depth of the Hilbert curve. If bits is one, this is the
-     *            top-level Hilbert curve.
-     * @return The Hilbert distance (or index) as a transposed Hilbert index.
+     *            depth of the Hilbert curve. If bits is one, this is the
+     *            top-level Hilbert curve
+     * @param point
+     *            Point in N-space
+     * @return The Hilbert distance (or index) as a transposed Hilbert index
      */
-    public static long[] transposedIndex(final long[] point, final int bits) {
-        final long[] result = point.clone();
-        final int dims = point.length;
-        final long maxBit = 1L << (bits - 1);
-        inverseUndo(result, dims, maxBit);
-        grayEncode(result, dims, maxBit);
-        return result;
-    }
 
-    public static BigInteger untranspose(long[] transposedIndex, int bits, boolean reverseOrder) {
-        byte[] interleavedBytes = interleave(transposedIndex, bits, reverseOrder);
-        return new BigInteger(interleavedBytes);
-    }
-    
-    public static BigInteger toIndex(long[] point, int bits, boolean reverseOrder) {
-        return Hilbert.untranspose(Hilbert.transposedIndex(point, bits), bits,
-                reverseOrder);
-    }
-
-    /// <summary>
-    /// Interleave the bits of an unsigned vector and generate a byte array in
-    /// little-endian order, as needed for the BigInteger constructor.
-    ///
-    /// The high-order bit from the last number in vector becomes the high-order
-    /// bit of last byte in the generated byte array.
-    /// The high-order bit of the next to last number becomes the second
-    /// highest-ordered bit in the last byte in the generated byte array.
-    /// The low-order bit of the first number becomes the low order bit of the
-    /// first byte in the new array.
-    ///
-    /// NOTE: For a given bitDepth and number of dimensions, many of the
-    /// intermediate values can be precomputed:
-    /// iFromUintVector
-    /// iFromUintBit
-    /// iToByteVector
-    /// iToByteBit
-    /// This is done in the method interleaver.
-    /// </summary>
-    public static byte[] interleave(long[] vector, int bitDepth, boolean reverseOrder) {
-        // The individual bytes in the value array must be created in
-        // little-endian order, from lowest-order byte to highest-order byte
-        // in order to be useful when creating a BigInteger.
-        int dimensions = vector.length; // Pull member access out of loop!
-        int bytesNeeded = (bitDepth * dimensions) >> 3;
-        short[] shorts = new short[bytesNeeded + 1]; // BigInteger seems to
-                                                       // need an extra, zero
-                                                       // byte at the end. Might
-                                                       // be for the sign bit.
-        int numBits = dimensions * bitDepth;
-
-        for (int iBit = 0; iBit < numBits; iBit++) {
-            int iFromLongVector = iBit % dimensions;
-            int iFromLongBit = iBit / dimensions;
-            int iToByteVector = iBit >> 3;
-            int iToByteBit = iBit & 0x7;
-
-            int indexToUse = reverseOrder ? dimensions - iFromLongVector - 1 : iFromLongVector;
-            short bit = (short) (((vector[indexToUse] >> iFromLongBit) & 1) << iToByteBit);
-            shorts[iToByteVector] |= bit;
-        }
-        ByteBuffer bb = ByteBuffer.allocate(shorts.length);
-        ByteBuffer b = ByteBuffer.allocate(2);
-        for (short sh: shorts) {
-            b.clear();
-            b.putShort(sh);
-            bb.put(b.get(1));
-        }
-        return bb.array();
-    }
-
-    private static void inverseUndo(final long[] result, final int dims, final long maxBit) {
-        for (long bit = maxBit; bit != 0; bit >>>= 1) {
-            final long mask = bit - 1;
-            for (int i = 0; i < dims; i++)
-                if ((result[i] & bit) != 0)
-                    result[0] ^= mask; // invert
-                else
-                    swapBits(result, mask, i);
+    public static long[] transposedIndex(int bits, long... point) {
+        final long M = 1L << (bits - 1);
+        long[] x = Arrays.copyOf(point, point.length);
+        int n = point.length; // n: Number of dimensions
+        long p, q, t;
+        int i;
+        // Inverse undo
+        for (q = M; q > 1; q >>= 1) {
+            p = q - 1;
+            for (i = 0; i < n; i++)
+                if ((x[i] & q) != 0)
+                    x[0] ^= p; // invert
+                else {
+                    t = (x[0] ^ x[i]) & p;
+                    x[0] ^= t;
+                    x[i] ^= t;
+                }
         } // exchange
+          // Gray encode
+        for (i = 1; i < n; i++)
+            x[i] ^= x[i - 1];
+        t = 0;
+        for (q = M; q > 1; q >>= 1)
+            if ((x[n - 1] & q) != 0)
+                t ^= q - 1;
+        for (i = 0; i < n; i++)
+            x[i] ^= t;
+
+        return x;
     }
 
-    private static void grayEncode(final long[] result, final int dims, final long maxBit) {
-        for (int i = 1; i < dims; i++)
-            result[i] ^= result[i - 1];
-        long mask = 0;
-        for (long bit = maxBit; bit != 0; bit >>>= 1)
-            if ((result[dims - 1] & bit) != 0)
-                mask ^= bit - 1;
-        for (int i = 0; i < dims; i++)
-            result[i] ^= mask;
+    public static BigInteger index(int bits, long... point) {
+        return toBigInteger(bits, transposedIndex(bits, point));
     }
 
-    private static void swapBits(final long[] array, final long mask, final int index) {
-        final long swap = (array[0] ^ array[index]) & mask;
-        array[0] ^= swap;
-        array[index] ^= swap;
-    }
-
-//    /// <summary>
-//    /// Convert a BigInteger into an array of bits.
-//    /// </summary>
-//    /// <param name="N">BigInteger to convert.</param>
-//    /// <returns>Array of ones and zeroes. The first element is the low bit of
-//    /// the BigInteger.
-//    /// The last bit is the sign bit.
-//    /// </returns>
-//    public static int[] unpackBigInteger(BigInteger N) {
-//        byte[] bytes = N.toByteArray();
-//        int[] bits = new int[bytes.length << 3];
-//        int bitIndex = 0;
-//        for (byte b : bytes) {
-//            byte bShift = b;
-//            for (int bitInByte = 0; bitInByte < 8; bitInByte++) {
-//                bits[bitIndex++] = bShift & 1;
-//                bShift >>= 1;
-//            }
-//        }
-//        return bits;
-//    }
-
-    /// <summary>
-    /// Convert a BigInteger into an array of bits using the supplied array to
-    /// hold the results.
-    /// </summary>
-    /// <param name="N">BigInteger to convert.</param>
-    /// <param name="bits">Array to hold bits from result.
-    /// If the BigInteger has more bits than this, the higher bits are
-    /// dropped.</param>
-    /// <returns>Array of ones and zeroes. The first element is the low bit of
-    /// the BigInteger.
-    /// The last bit is only the sign bit if the size of the supplied array
-    /// times eight exactly matches the number of bytes returned by
-    /// BigInteger.ToByteArray.
-    /// </returns>
-    public static int[] unpackBigInteger(BigInteger N, int[] bits) {
-        byte[] bytes = N.toByteArray();
-        int bitIndex = 0;
-        for (byte b : bytes) {
-            int bShift = Byte.toUnsignedInt(b);
-            for (int bitInByte = 0; bitInByte < 8 && (bitIndex < bits.length); bitInByte++) {
-                bits[bitIndex++] = bShift & 1;
-                bShift >>= 1;
+    static BigInteger toBigInteger(int bits, long... transposedIndex) {
+        int length = transposedIndex.length * bits;
+        BitSet b = new BitSet(length);
+        int bIndex = length - 1;
+        long mask = 1L << (bits - 1);
+        for (int i = 0; i < bits; i++) {
+            for (int j = 0; j < transposedIndex.length; j++) {
+                if ((transposedIndex[j] & mask) != 0) {
+                    b.set(bIndex);
+                }
+                bIndex--;
             }
-            if (bitIndex >= bits.length)
-                break;
+            mask >>= 1;
         }
-        return bits;
+        if (b.isEmpty())
+            return BigInteger.ZERO;
+        else {
+            byte[] bytes = b.toByteArray();
+            // make Big Endian
+            reverse(bytes);
+            return new BigInteger(1, bytes);
+        }
     }
 
-    public static long[] uninterleave(BigInteger grayCode, int bitDepth, int dimensions,
-            boolean reverseOrder) {
-        // TODO: There must be a more efficient way to delaminate, but I can't
-        // figure it out.
-        long[] vector = new long[dimensions];
-        int numBits = dimensions * bitDepth;
-        int[] bits = unpackBigInteger(grayCode, new int[numBits]);
-        int bitIndex = 0;
-        int startDimension = reverseOrder ? dimensions - 1 : 0;
-        int stopDimension = reverseOrder ? -1 : dimensions;
-        int dimIncrement = reverseOrder ? -1 : 1;
-        for (int bitNumber = 0; bitNumber < bitDepth; bitNumber++) {
-            for (int dimension = startDimension; dimension != stopDimension; dimension += dimIncrement) {
-                vector[dimension] = vector[dimension] | (long) (bits[bitIndex++] << bitNumber);
-            }
+    // visible for testing
+    static void reverse(byte[] array) {
+        if (array == null) {
+            return;
         }
-        return vector;
+        int i = 0;
+        int j = array.length - 1;
+        byte tmp;
+        while (j > i) {
+            tmp = array[j];
+            array[j] = array[i];
+            array[i] = tmp;
+            j--;
+            i++;
+        }
     }
 
-    public static void main(String[] args) {
-        System.out.println((byte) 255);
-        System.out.println(Byte.toUnsignedInt((byte) 255));
-    }
-    
 }
