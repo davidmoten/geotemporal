@@ -10,9 +10,12 @@ import java.util.Arrays;
 
 import javax.imageio.ImageIO;
 
-public class WikipediaHilbertMain {
+import org.junit.Test;
 
-    public static void main(String[] args) throws IOException {
+public class WikipediaHilbertTest {
+
+    @Test
+    public void createImageUsingWikpediaHilbertCurveCode() throws IOException {
         int bits = 5;
         int n = 1 << bits;
         for (int i = 0; i < n * n; i++) {
@@ -38,7 +41,13 @@ public class WikipediaHilbertMain {
             x = x2;
             y = y2;
         }
-        ImageIO.write(b, "PNG", new File("target/image.png"));
+        ImageIO.write(b, "PNG", new File("target/imageWiki.png"));
+    }
+    
+    
+    @Test
+    public void roundTrip() {
+        //TODO 
     }
 
     private static long xy2d(long n, long[] point) {

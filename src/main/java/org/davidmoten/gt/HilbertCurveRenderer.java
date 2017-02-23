@@ -13,8 +13,18 @@ import javax.imageio.ImageIO;
 import org.davidmoten.exceptions.IORuntimeException;
 
 public final class HilbertCurveRenderer {
-    
-    public static void renderToFile(int bits, int dimensions, int width, String filename){
+
+    public static void renderToFile(int bits, int width, String filename) {
+        BufferedImage b = render(bits, width);
+        try {
+            ImageIO.write(b, "PNG", new File(filename));
+        } catch (IOException e) {
+            throw new IORuntimeException(e);
+        }
+    }
+
+    public static BufferedImage render(int bits, int width) {
+        int dimensions = 2;
         HilbertCurve c = HilbertCurve.bits(bits).dimensions(dimensions);
         int n = 1 << bits;
         int height = width;
@@ -35,10 +45,6 @@ public final class HilbertCurveRenderer {
             x = x2;
             y = y2;
         }
-        try {
-            ImageIO.write(b, "PNG", new File("target/image.png"));
-        } catch (IOException e) {
-            throw new IORuntimeException(e);
-        }
+        return b;
     }
 }
