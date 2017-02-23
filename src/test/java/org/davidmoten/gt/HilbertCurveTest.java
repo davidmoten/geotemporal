@@ -2,6 +2,7 @@ package org.davidmoten.gt;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -97,8 +98,8 @@ public class HilbertCurveTest {
     @Test
     public void testRoundTrips() {
         boolean failed = false;
-        int dimensions = 3;
         for (int bits = 1; bits <= 10; bits++) {
+            for (int dimensions = 2; dimensions <= 10; dimensions++)
                 for (long i = 0; i < Math.pow(2, bits + 1); i++) {
                     if (!checkRoundTrip(bits, dimensions, i)) {
                         System.out.println("failed round trip for bits=" + bits + ", dimensions="
@@ -107,8 +108,14 @@ public class HilbertCurveTest {
                     }
                 }
         }
-        if (failed)
+        if (failed) {
             Assert.fail("round trips failed (listed in log)");
+        }
+    }
+
+    @Test
+    public void testRoundTrip3Dimensions3BitsIndex1() {
+        assertTrue(checkRoundTrip(3, 3, 1));
     }
 
     @Test

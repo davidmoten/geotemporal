@@ -122,7 +122,7 @@ public final class HilbertCurve {
         long[] x = new long[dimensions];
         for (int idx = 0; idx < b.length(); idx++) {
             if (b.get(idx)) {
-                int dim = (length - idx + 1) % dimensions;
+                int dim = (length - idx - 1) % dimensions;
                 int shift = (idx / dimensions) % bits;
                 x[dim] |= 1 << shift;
             }
