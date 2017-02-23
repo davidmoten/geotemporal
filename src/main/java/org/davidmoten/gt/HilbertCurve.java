@@ -4,6 +4,9 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
 /**
  * Converts between Hilbert index (transposed and {@code BigInteger}) and
  * N-dimensional points.
@@ -72,12 +75,94 @@ public final class HilbertCurve {
      * @return the coordinates of the point represented by the transposed index
      *         on the Hilbert curve
      */
-    public long[] point(long... transposedIndex) {
+    public long[] transposedIndexToPoint(long... transposedIndex) {
+        Preconditions.checkArgument(transposedIndex.length == dimensions);
         return point(bits, transposedIndex);
     }
 
-    static long[] point(int bits, long... transposedIndex) {
+    /**
+     * <p>
+     * Given the axes (coordinates) of a point in N-Dimensional space, find the
+     * distance to that point along the Hilbert curve. That distance will be
+     * transposed; broken into pieces and distributed into an array.
+     *
+     * <p>
+     * The number of dimensions is the length of the hilbertAxes array.
+     *
+     * <p>
+     * Note: In Skilling's paper, this function is called AxestoTranspose.
+     * 
+     * @param point
+     *            Point in N-space
+     * @return The Hilbert distance (or index) as a transposed Hilbert index
+     */
+    public long[] pointToTransposedIndex(long... point) {
+        Preconditions.checkArgument(point.length == dimensions);
+        return transposedIndex_(bits, point);
+    }
 
+    public BigInteger pointToIndex(long... point) {
+        Preconditions.checkArgument(point.length == dimensions);
+        return toBigInteger(bits, transposedIndex_(bits, point));
+    }
+
+    public long[] indexToPoint(BigInteger index) {
+        return transposedIndexToPoint(transpose(index));
+    }
+    
+    public long[] indexToPoint(long index) {
+        return indexToPoint(BigInteger.valueOf(index));
+    }
+
+    public long[] transpose(BigInteger index) {
+        int length = dimensions * bits;
+        byte[] bytes = index.toByteArray();
+        Util.reverse(bytes);
+        BitSet b = BitSet.valueOf(bytes);
+        long[] x = new long[dimensions];
+        for (int idx = 0; idx < b.length(); idx++) {
+            if (b.get(idx)) {
+                int dim = (length - idx + 1) % dimensions;
+                int shift = (idx / dimensions) % bits;
+                x[dim] |= 1 << shift;
+            }
+        }
+        return x;
+    }
+
+    private static long[] transposedIndex_(int bits, long... point) {
+        final long M = 1L << (bits - 1);
+        long[] x = Arrays.copyOf(point, point.length);
+        int n = point.length; // n: Number of dimensions
+        long p, q, t;
+        int i;
+        // Inverse undo
+        for (q = M; q > 1; q >>= 1) {
+            p = q - 1;
+            for (i = 0; i < n; i++)
+                if ((x[i] & q) != 0)
+                    x[0] ^= p; // invert
+                else {
+                    t = (x[0] ^ x[i]) & p;
+                    x[0] ^= t;
+                    x[i] ^= t;
+                }
+        } // exchange
+          // Gray encode
+        for (i = 1; i < n; i++)
+            x[i] ^= x[i - 1];
+        t = 0;
+        for (q = M; q > 1; q >>= 1)
+            if ((x[n - 1] & q) != 0)
+                t ^= q - 1;
+        for (i = 0; i < n; i++)
+            x[i] ^= t;
+    
+        return x;
+    }
+
+    private static long[] point(int bits, long... transposedIndex) {
+    
         final long N = 2L << (bits - 1);
         long[] x = Arrays.copyOf(transposedIndex, transposedIndex.length);
         int n = x.length; // n: Number of dimensions
@@ -105,61 +190,6 @@ public final class HilbertCurve {
         return x;
     }
 
-    /**
-     * <p>
-     * Given the axes (coordinates) of a point in N-Dimensional space, find the
-     * distance to that point along the Hilbert curve. That distance will be
-     * transposed; broken into pieces and distributed into an array.
-     *
-     * <p>
-     * The number of dimensions is the length of the hilbertAxes array.
-     *
-     * <p>
-     * Note: In Skilling's paper, this function is called AxestoTranspose.
-     * 
-     * @param point
-     *            Point in N-space
-     * @return The Hilbert distance (or index) as a transposed Hilbert index
-     */
-    public long[] transposedIndex(long... point) {
-        return transposedIndex_(bits, point);
-    }
-
-    static long[] transposedIndex_(int bits, long... point) {
-        final long M = 1L << (bits - 1);
-        long[] x = Arrays.copyOf(point, point.length);
-        int n = point.length; // n: Number of dimensions
-        long p, q, t;
-        int i;
-        // Inverse undo
-        for (q = M; q > 1; q >>= 1) {
-            p = q - 1;
-            for (i = 0; i < n; i++)
-                if ((x[i] & q) != 0)
-                    x[0] ^= p; // invert
-                else {
-                    t = (x[0] ^ x[i]) & p;
-                    x[0] ^= t;
-                    x[i] ^= t;
-                }
-        } // exchange
-          // Gray encode
-        for (i = 1; i < n; i++)
-            x[i] ^= x[i - 1];
-        t = 0;
-        for (q = M; q > 1; q >>= 1)
-            if ((x[n - 1] & q) != 0)
-                t ^= q - 1;
-        for (i = 0; i < n; i++)
-            x[i] ^= t;
-
-        return x;
-    }
-
-    public BigInteger index(long... point) {
-        return toBigInteger(bits, transposedIndex_(bits, point));
-    }
-
     // Quote from Paul Chernoch
     // Interleaving means take one bit from the first matrix element, one bit
     // from the next, etc, then take the second bit from the first matrix
@@ -167,6 +197,7 @@ public final class HilbertCurve {
     // last element. Combine those bits in that order into a single BigInteger,
     // which can have as many bits as necessary. This converts the array into a
     // single number.
+    @VisibleForTesting
     static BigInteger toBigInteger(int bits, long... transposedIndex) {
         int length = transposedIndex.length * bits;
         BitSet b = new BitSet(length);
@@ -189,26 +220,6 @@ public final class HilbertCurve {
             Util.reverse(bytes);
             return new BigInteger(1, bytes);
         }
-    }
-
-    public long[] point(BigInteger index) {
-        return point(transpose(index));
-    }
-
-    public long[] transpose(BigInteger index) {
-        int length = dimensions * bits;
-        byte[] bytes = index.toByteArray();
-        Util.reverse(bytes);
-        BitSet b = BitSet.valueOf(bytes);
-        long[] x = new long[dimensions];
-        for (int idx = 0; idx < b.length(); idx++) {
-            if (b.get(idx)) {
-                int dim = (length - idx + 1) % dimensions;
-                int shift = (idx / dimensions) % bits;
-                x[dim] |= 1 << shift;
-            }
-        }
-        return x;
     }
 
 }

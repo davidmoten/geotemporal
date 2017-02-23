@@ -15,13 +15,13 @@ public class HilbertCurveTest {
     @Test
     public void testIndex1() {
         HilbertCurve c = HilbertCurve.bits(2).dimensions(2);
-        assertEquals(7, c.index(1, 2).intValue());
+        assertEquals(7, c.pointToIndex(1, 2).intValue());
     }
 
     @Test
     public void testIndex2() {
         HilbertCurve c = HilbertCurve.bits(5).dimensions(2);
-        assertEquals(256, c.index(0, 16).intValue());
+        assertEquals(256, c.pointToIndex(0, 16).intValue());
     }
 
     @Test
@@ -54,13 +54,13 @@ public class HilbertCurveTest {
     }
 
     @Test
-    public void test5() {
+    public void testPrintOutIndexValues() {
         int bits = 5;
         HilbertCurve c = HilbertCurve.bits(bits).dimensions(2);
         int n = 2 << (bits - 1);
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                System.out.print(c.index(i, j));
+                System.out.print(c.pointToIndex(i, j));
                 System.out.print("\t");
             }
             System.out.println();
@@ -90,20 +90,22 @@ public class HilbertCurveTest {
         int bits = 2;
         HilbertCurve c = HilbertCurve.bits(bits).dimensions(2);
         for (long i = 0; i < Math.round(Math.pow(2, bits)); i++) {
-            System.out.println(i + "\t" + Arrays.toString(c.point(BigInteger.valueOf(i))));
+            System.out.println(i + "\t" + Arrays.toString(c.indexToPoint(BigInteger.valueOf(i))));
         }
     }
 
     @Test
     public void testRoundTrips() {
         boolean failed = false;
-        for (int bits = 1; bits <= 3; bits++) {
-            for (long i = 0; i < Math.pow(2, bits + 1); i++) {
-                if (!checkRoundTrip(bits, i)) {
-                    System.out.println("failed round trip for bits=" + bits + ", index=" + i);
-                    failed = true;
+        int dimensions = 3;
+        for (int bits = 1; bits <= 10; bits++) {
+                for (long i = 0; i < Math.pow(2, bits + 1); i++) {
+                    if (!checkRoundTrip(bits, dimensions, i)) {
+                        System.out.println("failed round trip for bits=" + bits + ", dimensions="
+                                + dimensions + ", index=" + i);
+                        failed = true;
+                    }
                 }
-            }
         }
         if (failed)
             Assert.fail("round trips failed (listed in log)");
@@ -112,9 +114,9 @@ public class HilbertCurveTest {
     @Test
     public void testPointFromIndexBits1Point0_1() {
         HilbertCurve c = HilbertCurve.bits(1).dimensions(2);
-        long[] ti = c.transposedIndex(0, 1);
+        long[] ti = c.pointToTransposedIndex(0, 1);
         assertEquals("0,1", ti[0] + "," + ti[1]);
-        assertEquals(1, c.index(0, 1).intValue());
+        assertEquals(1, c.pointToIndex(0, 1).intValue());
         long[] ti2 = c.transpose(BigInteger.valueOf(1));
         assertEquals("0,1", ti2[0] + "," + ti2[1]);
     }
@@ -122,18 +124,18 @@ public class HilbertCurveTest {
     @Test
     public void testPointFromIndexBits1Point1_1() {
         HilbertCurve c = HilbertCurve.bits(1).dimensions(2);
-        long[] ti = c.transposedIndex(1, 1);
+        long[] ti = c.pointToTransposedIndex(1, 1);
         assertEquals("1,0", ti[0] + "," + ti[1]);
-        assertEquals(2, c.index(1, 1).intValue());
+        assertEquals(2, c.pointToIndex(1, 1).intValue());
         long[] ti2 = c.transpose(BigInteger.valueOf(2));
         assertEquals("1,0", ti2[0] + "," + ti2[1]);
     }
 
-    private static boolean checkRoundTrip(int bits, long value) {
-        HilbertCurve c = HilbertCurve.bits(bits).dimensions(2);
-        long[] point = c.point(BigInteger.valueOf(value));
-        assertEquals(2, point.length);
-        return value == c.index(point).intValue();
+    private static boolean checkRoundTrip(int bits, int dimensions, long value) {
+        HilbertCurve c = HilbertCurve.bits(bits).dimensions(dimensions);
+        long[] point = c.indexToPoint(value);
+        assertEquals(dimensions, point.length);
+        return value == c.pointToIndex(point).longValue();
     }
 
 }
