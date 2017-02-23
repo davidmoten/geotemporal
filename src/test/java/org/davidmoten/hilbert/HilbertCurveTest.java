@@ -8,8 +8,6 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.BitSet;
 
-import org.davidmoten.hilbert.HilbertCurve;
-import org.davidmoten.hilbert.Util;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -139,7 +137,30 @@ public class HilbertCurveTest {
         long[] ti2 = c.transpose(BigInteger.valueOf(2));
         assertEquals("1,0", ti2[0] + "," + ti2[1]);
     }
-
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testBitsPositive() {
+        HilbertCurve.bits(0);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testDimensionAtLeastTwo() {
+        HilbertCurve.bits(2).dimensions(1);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testPointMatchesDimensions() {
+        HilbertCurve c = HilbertCurve.bits(2).dimensions(2);
+        long[] point = {1};
+        c.index(point);
+    }
+    
+    @Test(expected = NullPointerException.class)
+    public void testIndexCannotBeNull() {
+        HilbertCurve c = HilbertCurve.bits(2).dimensions(2);
+        c.point((BigInteger) null);
+    }
+    
     private static boolean checkRoundTrip(int bits, int dimensions, long value) {
         HilbertCurve c = HilbertCurve.bits(bits).dimensions(dimensions);
         long[] point = c.point(value);

@@ -57,10 +57,12 @@ public final class HilbertCurve {
         final int bits;
 
         private HilbertCurveBuilder(int bits) {
+            Preconditions.checkArgument(bits>0, "bits must be greater than zero");
             this.bits = bits;
         }
 
         public HilbertCurve dimensions(int dimensions) {
+            Preconditions.checkArgument(dimensions > 1, "dimensions must be at least 2");
             return new HilbertCurve(bits, dimensions);
         }
     }
