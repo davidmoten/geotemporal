@@ -1,4 +1,4 @@
-package org.davidmoten.gt;
+package org.davidmoten.hilbert;
 
 import static org.junit.Assert.assertTrue;
 
@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
+import org.davidmoten.hilbert.HilbertCurveRenderer;
 import org.junit.Test;
 
 public class HilbertCurveRendererTest {

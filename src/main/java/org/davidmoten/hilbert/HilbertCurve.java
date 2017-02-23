@@ -1,4 +1,4 @@
-package org.davidmoten.gt;
+package org.davidmoten.hilbert;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -65,6 +65,21 @@ public final class HilbertCurve {
         }
     }
 
+    public BigInteger index(long... point) {
+        Preconditions.checkArgument(point.length == dimensions);
+        return toBigInteger(bits, transposedIndex(bits, point));
+    }
+
+    public long[] point(BigInteger index) {
+        Preconditions.checkNotNull(index);
+        Preconditions.checkArgument(index.signum() != -1, "index cannot be negative");
+        return transposedIndexToPoint(transpose(index));
+    }
+
+    public long[] point(long index) {
+        return point(BigInteger.valueOf(index));
+    }
+
     /**
      * Converts the Hilbert transposed index into an N-dimensional point
      * expressed as a vector of {@code long}.
@@ -75,9 +90,9 @@ public final class HilbertCurve {
      * @return the coordinates of the point represented by the transposed index
      *         on the Hilbert curve
      */
-    public long[] transposedIndexToPoint(long... transposedIndex) {
-        Preconditions.checkArgument(transposedIndex.length == dimensions);
-        return point(bits, transposedIndex);
+    @VisibleForTesting
+    long[] transposedIndexToPoint(long... transposedIndex) {
+        return transposedIndexToPoint(bits, transposedIndex);
     }
 
     /**
@@ -96,25 +111,13 @@ public final class HilbertCurve {
      *            Point in N-space
      * @return The Hilbert distance (or index) as a transposed Hilbert index
      */
-    public long[] pointToTransposedIndex(long... point) {
-        Preconditions.checkArgument(point.length == dimensions);
-        return transposedIndex_(bits, point);
+    @VisibleForTesting
+    long[] pointToTransposedIndex(long... point) {
+        return transposedIndex(bits, point);
     }
 
-    public BigInteger pointToIndex(long... point) {
-        Preconditions.checkArgument(point.length == dimensions);
-        return toBigInteger(bits, transposedIndex_(bits, point));
-    }
-
-    public long[] indexToPoint(BigInteger index) {
-        return transposedIndexToPoint(transpose(index));
-    }
-    
-    public long[] indexToPoint(long index) {
-        return indexToPoint(BigInteger.valueOf(index));
-    }
-
-    public long[] transpose(BigInteger index) {
+    @VisibleForTesting
+    long[] transpose(BigInteger index) {
         int length = dimensions * bits;
         byte[] bytes = index.toByteArray();
         Util.reverse(bytes);
@@ -130,7 +133,7 @@ public final class HilbertCurve {
         return x;
     }
 
-    private static long[] transposedIndex_(int bits, long... point) {
+    private static long[] transposedIndex(int bits, long... point) {
         final long M = 1L << (bits - 1);
         long[] x = Arrays.copyOf(point, point.length);
         int n = point.length; // n: Number of dimensions
@@ -157,12 +160,12 @@ public final class HilbertCurve {
                 t ^= q - 1;
         for (i = 0; i < n; i++)
             x[i] ^= t;
-    
+
         return x;
     }
 
-    private static long[] point(int bits, long... transposedIndex) {
-    
+    private static long[] transposedIndexToPoint(int bits, long... transposedIndex) {
+
         final long N = 2L << (bits - 1);
         long[] x = Arrays.copyOf(transposedIndex, transposedIndex.length);
         int n = x.length; // n: Number of dimensions

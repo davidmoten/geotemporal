@@ -1,4 +1,4 @@
-package org.davidmoten.gt;
+package org.davidmoten.hilbert;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

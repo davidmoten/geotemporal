@@ -1,4 +1,4 @@
-package org.davidmoten.gt;
+package org.davidmoten.hilbert;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -38,7 +38,7 @@ public final class HilbertCurveRenderer {
         int x = margin;
         int y = margin;
         for (long i = 0; i < n * n; i++) {
-            long[] point = c.indexToPoint(BigInteger.valueOf(i));
+            long[] point = c.point(BigInteger.valueOf(i));
             int x2 = (int) Math.round((double) point[0] / (n - 1) * (width - 2 * margin) + margin);
             int y2 = (int) Math.round((double) point[1] / (n - 1) * (height - 2 * margin) + margin);
             g.drawLine(x, y, x2, y2);

@@ -1,4 +1,4 @@
-package org.davidmoten.gt;
+package org.davidmoten.hilbert;
 
 public final class Util {
 
