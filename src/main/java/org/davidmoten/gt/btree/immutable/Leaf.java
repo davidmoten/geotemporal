@@ -5,9 +5,11 @@ import java.util.List;
 
 public final class Leaf<K, T> implements Node<K, T> {
 
+    private final Context<K> context;
     private final List<Entry<K, T>> entries;
 
-    public Leaf(List<Entry<K, T>> entries) {
+    public Leaf(Context<K> context, List<Entry<K, T>> entries) {
+        this.context = context;
         this.entries = entries;
     }
 
@@ -22,11 +24,14 @@ public final class Leaf<K, T> implements Node<K, T> {
 
     @Override
     public Leaf<K, T> add(Entry<K, T> entry) {
-        List<Entry<K, T>> list = new ArrayList<>(entries.size() + 1);
-        list.addAll(entries);
-        list.add(entry);
-        return new Leaf<K, T>(list);
-
+        if (entries.size() < context.maxChildren) {
+            List<Entry<K, T>> list = new ArrayList<>(entries.size() + 1);
+            list.addAll(entries);
+            list.add(entry);
+            return new Leaf<K, T>(context, list);
+        } else {
+            return null;
+        }
     }
 
 }

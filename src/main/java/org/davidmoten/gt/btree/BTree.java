@@ -10,8 +10,8 @@ public final class BTree<Key, Value> {
     // must be even and greater than or equal to 4
     static final int MAX_CHILDREN = 4;
 
-    private final Comparator<Key> comparator;
     private Node<Key> root;
+    private final Comparator<Key> comparator;
     private int height;
     private int size;
 
