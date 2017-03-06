@@ -19,4 +19,10 @@ public final class NonLeaf<K, T> implements Node<K, T> {
         return children.size();
     }
 
+    @Override
+    public NonLeaf<K, T> add(Entry<K, T> entry) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }
