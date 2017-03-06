@@ -62,12 +62,12 @@ public final class BTree<Key, Value> {
         height++;
     }
 
-    private Node<Key> insert(Node<Key> h, Key key, Value val, int ht) {
+    private Node<Key> insert(Node<Key> h, Key key, Value val, int height) {
         int j;
         Entry<Key> t = new Entry<Key>(key, val, null);
 
         // external node
-        if (ht == 0) {
+        if (height == 0) {
             for (j = 0; j < h.m; j++) {
                 if (less(key, h.children[j].key))
                     break;
@@ -78,7 +78,7 @@ public final class BTree<Key, Value> {
         else {
             for (j = 0; j < h.m; j++) {
                 if ((j + 1 == h.m) || less(key, h.children[j + 1].key)) {
-                    Node<Key> u = insert(h.children[j++].next, key, val, ht - 1);
+                    Node<Key> u = insert(h.children[j++].next, key, val, height - 1);
                     if (u == null)
                         return null;
                     t.key = u.children[0].key;
@@ -106,9 +106,25 @@ public final class BTree<Key, Value> {
         return t;
     }
 
-    @Override
-    public String toString() {
-        return toString(root, height, "") + "\n";
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
+    public int size() {
+        return size;
+    }
+
+    @VisibleForTesting
+    int height() {
+        return height;
+    }
+
+    private boolean less(Key k1, Key k2) {
+        return comparator.compare(k1, k2) < 0;
+    }
+
+    private boolean eq(Key k1, Key k2) {
+        return comparator.compare(k1, k2) == 0;
     }
 
     private String toString(Node<Key> h, int ht, String indent) {
@@ -129,25 +145,9 @@ public final class BTree<Key, Value> {
         return s.toString();
     }
 
-    public boolean isEmpty() {
-        return size() == 0;
-    }
-
-    public int size() {
-        return size;
-    }
-
-    @VisibleForTesting
-    int height() {
-        return height;
-    }
-
-    private boolean less(Key k1, Key k2) {
-        return comparator.compare(k1, k2) < 0;
-    }
-
-    private boolean eq(Key k1, Key k2) {
-        return comparator.compare(k1, k2) == 0;
+    @Override
+    public String toString() {
+        return toString(root, height, "") + "\n";
     }
 
 }
