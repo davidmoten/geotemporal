@@ -18,7 +18,7 @@ public class BTree<K, T> {
         if (root == null) {
             root2 = new Leaf<K, T>(context, Lists.newArrayList(entry));
         } else {
-            root2 = root.add(entry);
+            root2 = root.insert(entry);
         }
         return new BTree<K, T>(root2, context);
     }

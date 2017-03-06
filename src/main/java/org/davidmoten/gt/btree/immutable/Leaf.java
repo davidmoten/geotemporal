@@ -23,7 +23,7 @@ public final class Leaf<K, T> implements Node<K, T> {
     }
 
     @Override
-    public Leaf<K, T> add(Entry<K, T> entry) {
+    public Leaf<K, T> insert(Entry<K, T> entry) {
         if (entries.size() < context.maxChildren) {
             List<Entry<K, T>> list = new ArrayList<>(entries.size() + 1);
             list.addAll(entries);

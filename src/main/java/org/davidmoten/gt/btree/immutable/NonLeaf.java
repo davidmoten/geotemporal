@@ -20,7 +20,7 @@ public final class NonLeaf<K, T> implements Node<K, T> {
     }
 
     @Override
-    public NonLeaf<K, T> add(Entry<K, T> entry) {
+    public NonLeaf<K, T> insert(Entry<K, T> entry) {
         // TODO Auto-generated method stub
         return null;
     }
