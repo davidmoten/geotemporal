@@ -38,6 +38,24 @@ public class BTreeTest {
     }
 
     @Test
+    public void testRangeFirstOnlyStartValueBefore() {
+        BTree<Integer, String> t = createTree();
+        t.range(0, 2) //
+                .test() //
+                .assertValue("one") //
+                .assertComplete();
+    }
+
+    @Test
+    public void testRangeLastTwo() {
+        BTree<Integer, String> t = createTree();
+        t.range(9, 11) //
+                .test() //
+                .assertValues("nine", "ten") //
+                .assertComplete();
+    }
+
+    @Test
     public void testRangeNotFound() {
         BTree<Integer, String> t = createTree();
         t.range(20, 30) //
