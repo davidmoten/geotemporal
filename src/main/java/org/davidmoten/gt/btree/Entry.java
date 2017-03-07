@@ -5,7 +5,7 @@ package org.davidmoten.gt.btree;
 final class Entry<Key, Value> {
 
     private Key key;
-    final Value val;
+    private final Value val;
     private Node<Key, Value> next; // helper field to iterate over array entries
 
     Entry(Key key, Value val, Node<Key, Value> next) {
@@ -28,5 +28,9 @@ final class Entry<Key, Value> {
 
     Node<Key, Value> next() {
         return next;
+    }
+    
+    Value value() {
+        return val;
     }
 }

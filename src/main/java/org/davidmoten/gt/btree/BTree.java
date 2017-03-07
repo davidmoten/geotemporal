@@ -49,11 +49,8 @@ public final class BTree<Key, Value> {
         if (u == null)
             return;
 
-        // need to split root
-        Node<Key, Value> t = new Node<Key, Value>(2);
-        t.setEntry(0, new Entry<Key, Value>(root.key(0), null, root));
-        t.setEntry(1, new Entry<Key, Value>(u.key(0), null, u));
-        root = t;
+        // need to give root a new parent
+        root = root.makeParentWith(u);
         height++;
     }
 

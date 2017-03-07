@@ -7,8 +7,9 @@ final class Node<Key, Value> {
     private static final int MAX_CHILDREN = 4;
 
     private int m; // number of children
+
     @SuppressWarnings("unchecked")
-    private Entry<Key, Value>[] children = new Entry[MAX_CHILDREN];
+    private final Entry<Key, Value>[] children = new Entry[MAX_CHILDREN];
 
     // create a node with k children
     Node(int k) {
@@ -20,7 +21,7 @@ final class Node<Key, Value> {
     }
 
     Value value(int j) {
-        return (Value) children[j].val;
+        return (Value) children[j].value();
     }
 
     Node<Key, Value> next(int j) {
@@ -57,6 +58,13 @@ final class Node<Key, Value> {
         for (int j = 0; j < m; j++) {
             t.setEntry(j, entry(m + j));
         }
+        return t;
+    }
+
+    public Node<Key, Value> makeParentWith(Node<Key, Value> u) {
+        Node<Key, Value> t = new Node<Key, Value>(2);
+        t.setEntry(0, new Entry<Key, Value>(this.key(0), null, this));
+        t.setEntry(1, new Entry<Key, Value>(u.key(0), null, u));
         return t;
     }
 }
