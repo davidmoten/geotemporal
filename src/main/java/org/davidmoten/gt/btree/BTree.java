@@ -44,14 +44,14 @@ public final class BTree<Key, Value> {
         });
     }
 
-    private void range(Node<Key, Value> x, Key lower, Key upper, int ht,
+    private boolean range(Node<Key, Value> x, Key lower, Key upper, int ht,
             ObservableEmitter<Value> emitter) {
 
         if (ht == 0) {
             // external node
             for (int j = 0; j < x.numEntries(); j++) {
                 if (emitter.isDisposed()) {
-                    return;
+                    return false;
                 }
                 if (geq(x.key(j), lower) && less(x.key(j), upper)) {
                     emitter.onNext(x.value(j));
@@ -62,12 +62,15 @@ public final class BTree<Key, Value> {
             for (int j = 0; j < x.numEntries(); j++) {
                 if (j + 1 == x.numEntries() || (less(lower, x.key(j + 1)))) {
                     if (emitter.isDisposed()) {
-                        return;
+                        return false;
                     }
-                    range(x.next(j), lower, upper, ht - 1, emitter);
+                    if (!range(x.next(j), lower, upper, ht - 1, emitter)) {
+                        return false;
+                    }
                 }
             }
         }
+        return true;
     }
 
     private Value search(Node<Key, Value> x, Key key, int ht) {
