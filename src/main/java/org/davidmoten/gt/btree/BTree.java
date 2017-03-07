@@ -26,12 +26,31 @@ public final class BTree<Key, Value> {
         return search(root, key, height);
     }
 
+    private Value search(Node<Key, Value> x, Key key, int ht) {
+        // external node
+        if (ht == 0) {
+            for (int j = 0; j < x.numEntries(); j++) {
+                if (eq(key, x.key(j))) {
+                    return x.value(j);
+                }
+            }
+        }
+
+        // internal node
+        else {
+            for (int j = 0; j < x.numEntries(); j++) {
+                if (j + 1 == x.numEntries() || less(key, x.key(j + 1)))
+                    return search(x.next(j), key, ht - 1);
+            }
+        }
+        return null;
+    }
+
     public Observable<Value> range(Key lowerInclusive, Key upperExclusive) {
         return range(root, lowerInclusive, upperExclusive, height);
     }
 
-    private Observable<Value> range(Node<Key, Value> x, Key lowerInclusive,
-            Key upperExclusive, int height) {
+    private Observable<Value> range(Node<Key, Value> x, Key lowerInclusive, Key upperExclusive, int height) {
         return Observable.create(new ObservableOnSubscribe<Value>() {
 
             @Override
@@ -44,8 +63,7 @@ public final class BTree<Key, Value> {
         });
     }
 
-    private boolean range(Node<Key, Value> x, Key lower, Key upper, int ht,
-            ObservableEmitter<Value> emitter) {
+    private boolean range(Node<Key, Value> x, Key lower, Key upper, int ht, ObservableEmitter<Value> emitter) {
 
         if (ht == 0) {
             // external node
@@ -71,26 +89,6 @@ public final class BTree<Key, Value> {
             }
         }
         return true;
-    }
-
-    private Value search(Node<Key, Value> x, Key key, int ht) {
-        // external node
-        if (ht == 0) {
-            for (int j = 0; j < x.numEntries(); j++) {
-                if (eq(key, x.key(j))) {
-                    return x.value(j);
-                }
-            }
-        }
-
-        // internal node
-        else {
-            for (int j = 0; j < x.numEntries(); j++) {
-                if (j + 1 == x.numEntries() || less(key, x.key(j + 1)))
-                    return search(x.next(j), key, ht - 1);
-            }
-        }
-        return null;
     }
 
     public void put(Key key, Value val) {
