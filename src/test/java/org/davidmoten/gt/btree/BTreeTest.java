@@ -19,6 +19,33 @@ public class BTreeTest {
         assertNull(createTree().get(0));
     }
 
+    @Test
+    public void testRange() {
+        BTree<Integer, String> t = createTree();
+        t.range(5, 8) //
+                .test() //
+                .assertValues("five", "six", "seven") //
+                .assertComplete();
+    }
+
+    @Test
+    public void testRangeFirstOnly() {
+        BTree<Integer, String> t = createTree();
+        t.range(1, 2) //
+                .test() //
+                .assertValue("one") //
+                .assertComplete();
+    }
+
+    @Test
+    public void testRangeNotFound() {
+        BTree<Integer, String> t = createTree();
+        t.range(20, 30) //
+                .test() //
+                .assertNoValues() //
+                .assertComplete();
+    }
+
     private static BTree<Integer, String> createTree() {
         BTree<Integer, String> t = new BTree<Integer, String>(Comparator.naturalOrder());
         t.put(1, "one");

@@ -30,8 +30,8 @@ public final class BTree<Key, Value> {
         return range(root, lowerInclusive, upperExclusive, height);
     }
 
-    private Observable<Value> range(Node<Key, Value> x, Key lowerInclusive, Key upperExclusive,
-            int height) {
+    private Observable<Value> range(Node<Key, Value> x, Key lowerInclusive,
+            Key upperExclusive, int height) {
         return Observable.create(new ObservableOnSubscribe<Value>() {
 
             @Override
