@@ -5,6 +5,10 @@ import java.util.Comparator;
 import com.github.davidmoten.guavamini.Preconditions;
 import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+
 public final class BTree<Key, Value> {
 
     private Node<Key, Value> root;
@@ -20,6 +24,50 @@ public final class BTree<Key, Value> {
     public Value get(Key key) {
         Preconditions.checkNotNull(key, "key cannot be null");
         return search(root, key, height);
+    }
+
+    public Observable<Value> range(Key lowerInclusive, Key upperExclusive) {
+        return range(root, lowerInclusive, upperExclusive, height);
+    }
+
+    private Observable<Value> range(Node<Key, Value> x, Key lowerInclusive, Key upperExclusive,
+            int height) {
+        return Observable.create(new ObservableOnSubscribe<Value>() {
+
+            @Override
+            public void subscribe(ObservableEmitter<Value> emitter) throws Exception {
+                range(x, lowerInclusive, upperExclusive, height, emitter);
+                if (!emitter.isDisposed()) {
+                    emitter.onComplete();
+                }
+            }
+        });
+    }
+
+    private void range(Node<Key, Value> x, Key lower, Key upper, int ht,
+            ObservableEmitter<Value> emitter) {
+
+        if (ht == 0) {
+            // external node
+            for (int j = 0; j < x.numEntries(); j++) {
+                if (emitter.isDisposed()) {
+                    return;
+                }
+                if (geq(x.key(j), lower) && less(x.key(j), upper)) {
+                    emitter.onNext(x.value(j));
+                }
+            }
+        } else {
+            // internal node
+            for (int j = 0; j < x.numEntries(); j++) {
+                if (j + 1 == x.numEntries() || (less(lower, x.key(j + 1)))) {
+                    if (emitter.isDisposed()) {
+                        return;
+                    }
+                    range(x.next(j), lower, upper, ht - 1, emitter);
+                }
+            }
+        }
     }
 
     private Value search(Node<Key, Value> x, Key key, int ht) {
@@ -101,13 +149,17 @@ public final class BTree<Key, Value> {
         return height;
     }
 
-    private boolean less(Key k1, Key k2) {
-        return comparator.compare(k1, k2) < 0;
+    private boolean less(Key a, Key b) {
+        return comparator.compare(a, b) < 0;
     }
 
-    private boolean eq(Key k1, Key k2) {
-        return comparator.compare(k1, k2) == 0;
+    private boolean eq(Key a, Key b) {
+        return comparator.compare(a, b) == 0;
     }
+
+    private boolean geq(Key a, Key b) {
+        return comparator.compare(a, b) >= 0;
+    };
 
     private String toString(Node<Key, Value> h, int ht, String indent) {
         StringBuilder s = new StringBuilder();
