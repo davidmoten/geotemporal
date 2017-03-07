@@ -7,17 +7,14 @@ import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
 
 public final class BTree<Key, Value> {
 
-    // must be even and greater than or equal to 4
-    static final int MAX_CHILDREN = 4;
-
-    private Node<Key> root;
+    private Node<Key, Value> root;
     private final Comparator<Key> comparator;
     private int height;
     private int size;
 
     public BTree(Comparator<Key> comparator) {
         this.comparator = comparator;
-        root = new Node<Key>(0);
+        root = new Node<Key, Value>(0);
     }
 
     public Value get(Key key) {
@@ -25,23 +22,21 @@ public final class BTree<Key, Value> {
         return search(root, key, height);
     }
 
-    @SuppressWarnings("unchecked")
-    private Value search(Node<Key> x, Key key, int ht) {
-        Entry<Key>[] children = x.children;
-
+    private Value search(Node<Key, Value> x, Key key, int ht) {
         // external node
         if (ht == 0) {
-            for (int j = 0; j < x.m; j++) {
-                if (eq(key, children[j].key))
-                    return (Value) children[j].val;
+            for (int j = 0; j < x.numEntries(); j++) {
+                if (eq(key, x.key(j))) {
+                    return x.value(j);
+                }
             }
         }
 
         // internal node
         else {
-            for (int j = 0; j < x.m; j++) {
-                if (j + 1 == x.m || less(key, children[j + 1].key))
-                    return search(children[j].next, key, ht - 1);
+            for (int j = 0; j < x.numEntries(); j++) {
+                if (j + 1 == x.numEntries() || less(key, x.key(j + 1)))
+                    return search(x.next(j), key, ht - 1);
             }
         }
         return null;
@@ -49,61 +44,51 @@ public final class BTree<Key, Value> {
 
     public void put(Key key, Value val) {
         Preconditions.checkNotNull(key, "key cannot be null");
-        Node<Key> u = insert(root, key, val, height);
+        Node<Key, Value> u = insert(root, key, val, height);
         size++;
         if (u == null)
             return;
 
         // need to split root
-        Node<Key> t = new Node<Key>(2);
-        t.children[0] = new Entry<Key>(root.children[0].key, null, root);
-        t.children[1] = new Entry<Key>(u.children[0].key, null, u);
+        Node<Key, Value> t = new Node<Key, Value>(2);
+        t.setEntry(0, new Entry<Key, Value>(root.key(0), null, root));
+        t.setEntry(1, new Entry<Key, Value>(u.key(0), null, u));
         root = t;
         height++;
     }
 
-    private Node<Key> insert(Node<Key> h, Key key, Value val, int height) {
+    private Node<Key, Value> insert(Node<Key, Value> h, Key key, Value val, int height) {
         int j;
-        Entry<Key> t = new Entry<Key>(key, val, null);
+        Entry<Key, Value> t = new Entry<Key, Value>(key, val, null);
 
         // external node
         if (height == 0) {
-            for (j = 0; j < h.m; j++) {
-                if (less(key, h.children[j].key))
+            for (j = 0; j < h.numEntries(); j++) {
+                if (less(key, h.key(j)))
                     break;
             }
         }
 
         // internal node
         else {
-            for (j = 0; j < h.m; j++) {
-                if ((j + 1 == h.m) || less(key, h.children[j + 1].key)) {
-                    Node<Key> u = insert(h.children[j++].next, key, val, height - 1);
+            for (j = 0; j < h.numEntries(); j++) {
+                if ((j + 1 == h.numEntries()) || less(key, h.key(j + 1))) {
+                    Node<Key, Value> u = insert(h.next(j++), key, val, height - 1);
                     if (u == null)
                         return null;
-                    t.key = u.children[0].key;
-                    t.next = u;
+                    t.setKey(u.key(0));
+                    t.setNext(u);
                     break;
                 }
             }
         }
 
-        for (int i = h.m; i > j; i--)
-            h.children[i] = h.children[i - 1];
-        h.children[j] = t;
-        h.m++;
-        if (h.m < MAX_CHILDREN)
-            return null;
-        else
-            return split(h);
-    }
+        h.insert(j, t);
 
-    private Node<Key> split(Node<Key> h) {
-        Node<Key> t = new Node<Key>(MAX_CHILDREN / 2);
-        h.m = MAX_CHILDREN / 2;
-        for (int j = 0; j < MAX_CHILDREN / 2; j++)
-            t.children[j] = h.children[MAX_CHILDREN / 2 + j];
-        return t;
+        if (h.isFull())
+            return h.split();
+        else
+            return null;
     }
 
     public boolean isEmpty() {
@@ -127,19 +112,18 @@ public final class BTree<Key, Value> {
         return comparator.compare(k1, k2) == 0;
     }
 
-    private String toString(Node<Key> h, int ht, String indent) {
+    private String toString(Node<Key, Value> h, int ht, String indent) {
         StringBuilder s = new StringBuilder();
-        Entry<Key>[] children = h.children;
 
         if (ht == 0) {
-            for (int j = 0; j < h.m; j++) {
-                s.append(indent + children[j].key + " " + children[j].val + "\n");
+            for (int j = 0; j < h.numEntries(); j++) {
+                s.append(indent + h.key(j) + " " + h.value(j) + "\n");
             }
         } else {
-            for (int j = 0; j < h.m; j++) {
+            for (int j = 0; j < h.numEntries(); j++) {
                 if (j > 0)
-                    s.append(indent + "(" + children[j].key + ")\n");
-                s.append(toString(children[j].next, ht - 1, indent + "     "));
+                    s.append(indent + "(" + h.key(j) + ")\n");
+                s.append(toString(h.next(j), ht - 1, indent + "     "));
             }
         }
         return s.toString();
