@@ -72,12 +72,17 @@ public class BTreeTest {
         BTree<Integer, String> t = createBigTree(n);
         t.range(1, n + 2).doOnNext(new Consumer<String>() {
             int i = 1;
+
             @Override
             public void accept(String s) throws Exception {
                 assertEquals(s, Integer.toString(i));
                 i++;
             }
-        }).count().test().assertNoErrors().assertValue((long) n).assertComplete();
+        }).count() //
+                .test() //
+                .assertNoErrors() //
+                .assertValue((long) n) //
+                .assertComplete();
     }
 
     private static BTree<Integer, String> createTree() {
