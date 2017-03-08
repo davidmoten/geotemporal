@@ -7,6 +7,8 @@ import java.util.Comparator;
 
 import org.junit.Test;
 
+import io.reactivex.functions.Consumer;
+
 public class BTreeTest {
 
     @Test
@@ -64,6 +66,20 @@ public class BTreeTest {
                 .assertComplete();
     }
 
+    @Test
+    public void testRangeBig() {
+        int n = 1000000;
+        BTree<Integer, String> t = createBigTree(n);
+        t.range(1, n + 2).doOnNext(new Consumer<String>() {
+            int i = 1;
+            @Override
+            public void accept(String s) throws Exception {
+                assertEquals(s, Integer.toString(i));
+                i++;
+            }
+        }).count().test().assertNoErrors().assertValue((long) n).assertComplete();
+    }
+
     private static BTree<Integer, String> createTree() {
         BTree<Integer, String> t = new BTree<Integer, String>(Comparator.naturalOrder());
         t.put(1, "one");
@@ -76,6 +92,14 @@ public class BTreeTest {
         t.put(8, "eight");
         t.put(9, "nine");
         t.put(10, "ten");
+        return t;
+    }
+
+    private static BTree<Integer, String> createBigTree(int size) {
+        BTree<Integer, String> t = new BTree<Integer, String>(Comparator.naturalOrder());
+        for (int i = 1; i <= size; i++) {
+            t.put(i, i + "");
+        }
         return t;
     }
 
