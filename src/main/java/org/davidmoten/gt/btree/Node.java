@@ -1,70 +1,25 @@
 package org.davidmoten.gt.btree;
 
-// helper B-tree node data type
-final class Node<Key, Value> {
+public interface Node<Key, Value> {
 
-    // must be even and greater than or equal to 4
-    private static final int MAX_CHILDREN = 4;
+    Key key(int j);
 
-    private int m; // number of children
+    Value value(int j);
 
-    @SuppressWarnings("unchecked")
-    private final Entry<Key, Value>[] children = new Entry[MAX_CHILDREN];
+    Node<Key, Value> next(int j);
 
-    // create a node with k children
-    Node(int k) {
-        m = k;
-    }
+    void setEntry(int i, Entry<Key, Value> entry);
 
-    Key key(int j) {
-        return children[j].key();
-    }
+    void insert(int j, Entry<Key, Value> t);
 
-    Value value(int j) {
-        return (Value) children[j].value();
-    }
+    Entry<Key, Value> entry(int i);
 
-    Node<Key, Value> next(int j) {
-        return children[j].next();
-    }
+    int numEntries();
 
-    void setEntry(int i, Entry<Key, Value> entry) {
-        children[i] = entry;
-    }
+    boolean isFull();
 
-    void insert(int j, Entry<Key, Value> t) {
-        for (int i = m; i > j; i--) {
-            children[i] = children[i - 1];
-        }
-        children[j] = t;
-        m++;
-    }
+    Node<Key, Value> split();
 
-    Entry<Key, Value> entry(int i) {
-        return children[i];
-    }
+    Node<Key, Value> makeParentWith(Node<Key, Value> u);
 
-    int numEntries() {
-        return m;
-    }
-
-    boolean isFull() {
-        return m == MAX_CHILDREN;
-    }
-
-    Node<Key, Value> split() {
-        m = MAX_CHILDREN / 2;
-        Node<Key, Value> t = new Node<Key, Value>(m);
-        for (int j = 0; j < m; j++) {
-            t.setEntry(j, entry(m + j));
-        }
-        return t;
-    }
-
-    public Node<Key, Value> makeParentWith(Node<Key, Value> u) {
-        Node<Key, Value> t = new Node<Key, Value>(2);
-        t.setEntry(0, new Entry<Key, Value>(this.key(0), null, this));
-        t.setEntry(1, new Entry<Key, Value>(u.key(0), null, u));
-        return t;
-    }
 }

@@ -18,7 +18,7 @@ public final class BTree<Key, Value> {
 
     public BTree(Comparator<Key> comparator) {
         this.comparator = comparator;
-        root = new Node<Key, Value>(0);
+        root = new NodeImpl<Key, Value>(0);
     }
 
     public Value get(Key key) {
