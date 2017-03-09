@@ -2,22 +2,32 @@ package org.davidmoten.gt.btree;
 
 import java.util.Comparator;
 
-final class Context<T> {
+final class Context<Key, Value> {
 
-    private final Comparator<T> comparator;
+    private final Comparator<Key> comparator;
     private final int maxChildren;
+    private final NodeFactory<Key, Value> nodeFactory;
 
-    Context(Comparator<T> comparator, int maxChildren) {
+    private Context(Comparator<Key> comparator, int maxChildren, NodeFactory<Key,Value> nodeFactory) {
         this.comparator = comparator;
         this.maxChildren = maxChildren;
+        this.nodeFactory = nodeFactory;
+    }
+    
+    public static <Key,Value> Context<Key,Value> create(Comparator<Key> comparator, int maxChildren, NodeFactory<Key,Value> nodeFactory) {
+        return new Context<Key,Value>(comparator, maxChildren, nodeFactory);
     }
 
-    Comparator<T> comparator() {
+    public Comparator<Key> comparator() {
         return comparator;
     }
 
-    int maxChildren() {
+    public int maxChildren() {
         return maxChildren;
+    }
+    
+    public NodeFactory<Key,Value> nodeFactory(){
+        return nodeFactory;
     }
 
 }

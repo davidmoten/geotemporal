@@ -1,7 +1,5 @@
 package org.davidmoten.gt.btree;
 
-import java.util.Comparator;
-
 import com.github.davidmoten.guavamini.Preconditions;
 import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
 
@@ -12,13 +10,13 @@ import io.reactivex.ObservableOnSubscribe;
 public final class BTree<Key, Value> {
 
     private Node<Key, Value> root;
-    private final Comparator<Key> comparator;
     private int height;
     private int size;
+    private final Context<Key, Value> context;
 
-    public BTree(Comparator<Key> comparator) {
-        this.comparator = comparator;
-        root = new NodeImpl<Key, Value>(0);
+    public BTree(Context<Key,Value> context) {
+        this.context = context;
+        root = context.nodeFactory().create(0);
     }
 
     public Value get(Key key) {
@@ -151,15 +149,15 @@ public final class BTree<Key, Value> {
     }
 
     private boolean less(Key a, Key b) {
-        return comparator.compare(a, b) < 0;
+        return context.comparator().compare(a, b) < 0;
     }
 
     private boolean eq(Key a, Key b) {
-        return comparator.compare(a, b) == 0;
+        return context.comparator().compare(a, b) == 0;
     }
 
     private boolean geq(Key a, Key b) {
-        return comparator.compare(a, b) >= 0;
+        return context.comparator().compare(a, b) >= 0;
     };
 
     private String toString(Node<Key, Value> h, int ht, String indent) {
