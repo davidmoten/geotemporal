@@ -2,10 +2,10 @@ package org.davidmoten.gt.btree;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 public class NodeFile<Key extends Serializable, Value extends Serializable>
         implements Node<Key, Value> {
@@ -27,6 +27,7 @@ public class NodeFile<Key extends Serializable, Value extends Serializable>
     private Object readObject(int j) {
         try {
             try (FileInputStream fis = new FileInputStream(file)) {
+                fis.skip(position + 8);
                 ObjectInputStream ois = new ObjectInputStream(fis);
                 Object o = null;
                 for (int i = 0; i <= j; i++) {
@@ -42,13 +43,24 @@ public class NodeFile<Key extends Serializable, Value extends Serializable>
     @SuppressWarnings("unchecked")
     @Override
     public Value value(int j) {
-       return (Value) readObject(j);
+        return (Value) readObject(j);
     }
 
     @Override
     public Node<Key, Value> next(int j) {
-        // TODO Auto-generated method stub
-        return null;
+        try (FileInputStream fis = new FileInputStream(file)) {
+            fis.skip(position);
+            byte[] a = new byte[8];
+            fis.read(a);
+            ByteBuffer b = ByteBuffer.wrap(a);
+            b.position(0);
+            int nextFileNo = b.getInt();
+            int nextPosition = b.getInt();
+            File nextFile = new File("target/" + nextFileNo + ".db");
+            return new NodeFile<Key, Value>(nextFile, nextPosition);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
