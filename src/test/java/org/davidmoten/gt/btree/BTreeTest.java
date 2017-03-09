@@ -87,7 +87,7 @@ public class BTreeTest {
 
     private static BTree<Integer, String> createTree() {
         BTree<Integer, String> t = new BTree<Integer, String>(Context.<Integer, String> create(
-                Comparator.naturalOrder(), 4, n -> new NodeImpl<Integer, String>(n)));
+                Comparator.naturalOrder(), 4, new NodeFactoryMemory<>()));
         t.put(1, "one");
         t.put(2, "two");
         t.put(3, "three");
@@ -103,7 +103,7 @@ public class BTreeTest {
 
     private static BTree<Integer, String> createBigTree(int size) {
         BTree<Integer, String> t = new BTree<Integer, String>(Context.<Integer, String> create(
-                Comparator.naturalOrder(), 4, n -> new NodeImpl<Integer, String>(n)));
+                Comparator.naturalOrder(), 4, new NodeFactoryMemory<>()));
         for (int i = 1; i <= size; i++) {
             t.put(i, i + "");
         }

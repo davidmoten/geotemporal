@@ -1,7 +1,7 @@
 package org.davidmoten.gt.btree;
 
 // helper B-tree node data type
-public final class NodeImpl<Key, Value> implements Node<Key, Value> {
+public final class NodeMemory<Key, Value> implements Node<Key, Value> {
 
     // must be even and greater than or equal to 4
     private static final int MAX_CHILDREN = 4;
@@ -12,7 +12,7 @@ public final class NodeImpl<Key, Value> implements Node<Key, Value> {
     private final Entry<Key, Value>[] children = new Entry[MAX_CHILDREN];
 
     // create a node with k children
-    public NodeImpl(int k) {
+    public NodeMemory(int k) {
         m = k;
     }
 
@@ -90,7 +90,7 @@ public final class NodeImpl<Key, Value> implements Node<Key, Value> {
     @Override
     public Node<Key, Value> split() {
         m = MAX_CHILDREN / 2;
-        Node<Key, Value> t = new NodeImpl<Key, Value>(m);
+        Node<Key, Value> t = new NodeMemory<Key, Value>(m);
         for (int j = 0; j < m; j++) {
             t.setEntry(j, entry(m + j));
         }
@@ -102,7 +102,7 @@ public final class NodeImpl<Key, Value> implements Node<Key, Value> {
      */
     @Override
     public Node<Key, Value> makeParentWith(Node<Key, Value> u) {
-        Node<Key, Value> t = new NodeImpl<Key, Value>(2);
+        Node<Key, Value> t = new NodeMemory<Key, Value>(2);
         t.setEntry(0, new Entry<Key, Value>(this.key(0), null, this));
         t.setEntry(1, new Entry<Key, Value>(u.key(0), null, u));
         return t;

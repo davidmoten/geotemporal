@@ -9,12 +9,14 @@ import io.reactivex.ObservableOnSubscribe;
 
 public final class BTree<Key, Value> {
 
+    private final Context<Key, Value> context;
+
+    // mutable
     private Node<Key, Value> root;
     private int height;
     private int size;
-    private final Context<Key, Value> context;
 
-    public BTree(Context<Key,Value> context) {
+    public BTree(Context<Key, Value> context) {
         this.context = context;
         root = context.nodeFactory().create(0);
     }
@@ -48,7 +50,8 @@ public final class BTree<Key, Value> {
         return range(root, lowerInclusive, upperExclusive, height);
     }
 
-    private Observable<Value> range(Node<Key, Value> x, Key lowerInclusive, Key upperExclusive, int height) {
+    private Observable<Value> range(Node<Key, Value> x, Key lowerInclusive, Key upperExclusive,
+            int height) {
         return Observable.create(new ObservableOnSubscribe<Value>() {
 
             @Override
@@ -61,7 +64,8 @@ public final class BTree<Key, Value> {
         });
     }
 
-    private boolean range(Node<Key, Value> x, Key lower, Key upper, int ht, ObservableEmitter<Value> emitter) {
+    private boolean range(Node<Key, Value> x, Key lower, Key upper, int ht,
+            ObservableEmitter<Value> emitter) {
 
         if (ht == 0) {
             // external node
@@ -169,8 +173,9 @@ public final class BTree<Key, Value> {
             }
         } else {
             for (int j = 0; j < h.numEntries(); j++) {
-                if (j > 0)
+                if (j > 0) {
                     s.append(indent + "(" + h.key(j) + ")\n");
+                }
                 s.append(toString(h.next(j), ht - 1, indent + "     "));
             }
         }
