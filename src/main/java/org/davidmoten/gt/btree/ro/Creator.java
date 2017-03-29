@@ -81,17 +81,6 @@ public class Creator<Entry, Key> {
         }
     }
 
-    private static final class KeyPosition<Key> {
-        final Key key;
-        final int position;
-
-        KeyPosition(Key key, int position) {
-            this.key = key;
-            this.position = position;
-        }
-
-    }
-
     private static class SerializedEntry<Entry> {
         final Entry entry;
         final byte[] bytes;
