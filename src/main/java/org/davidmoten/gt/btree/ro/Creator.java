@@ -17,8 +17,8 @@ public class Creator<Entry, Key> {
     private final int nodeMaxChildren;
     private final Function<Entry, Key> keyMapper;
 
-    public Creator(Serializer<Key> keySerializer, Serializer<Entry> entrySerializer,
-            int maxPageSizeBytes, int nodeMaxChildren, Function<Entry, Key> keyMapper) {
+    public Creator(Serializer<Key> keySerializer, Serializer<Entry> entrySerializer, int maxPageSizeBytes,
+            int nodeMaxChildren, Function<Entry, Key> keyMapper) {
         this.keySerializer = keySerializer;
         this.entrySerializer = entrySerializer;
         this.maxPageSizeBytes = maxPageSizeBytes;
@@ -28,12 +28,26 @@ public class Creator<Entry, Key> {
 
     public List<File> persist(Flowable<Entry> entries) {
         entries.map(entry -> new SerializedEntry<Entry>(entry, entrySerializer.serialize(entry)))
-                .compose(Transformers.<SerializedEntry<Entry>> toListWhile( //
+                .compose(Transformers.<SerializedEntry<Entry>>toListWhile( //
                         (list, t) -> {
-                            int size = list.stream().map(entry -> entry.bytes.length)
+                            int size = list.stream() //
+                                    .map(entry -> entry.bytes.length) //
                                     .collect(Collectors.summingInt(x -> x));
-                            return size + t.bytes.length <= maxPageSizeBytes;
-                        }));
+                            return size + t.bytes.length <= maxPageSizeBytes || list.size() == 0;
+                        })) //
+                .map(list -> {
+                    int size = list.stream() //
+                            .map(entry -> entry.bytes.length) //
+                            .collect(Collectors.summingInt(x -> x));
+                    byte[] bytes = new byte[size];
+                    int i = 0;
+                    for (SerializedEntry<Entry> en : list) {
+                        System.arraycopy(en.bytes, 0, bytes, i, en.bytes.length);
+                        i += en.bytes.length;
+                    }
+                    return bytes;
+                });
+        ;
         return null;
     }
 
@@ -46,7 +60,6 @@ public class Creator<Entry, Key> {
             this.entry = entry;
             this.bytes = bytes;
         }
-
     }
 
 }
