@@ -1,11 +1,13 @@
 package org.davidmoten.gt.btree.ro;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import com.github.davidmoten.rx2.flowable.Transformers;
@@ -16,21 +18,26 @@ import io.reactivex.functions.Function;
 
 public class Creator<Entry, Key> {
 
-    private final Serializer<Key> keySerializer;
+    private static final int FILE_NUM_SIZE = 4;
+    private static final int FILE_POSITION_SIZE = 4;
+    private final KeySerializer<Key> keySerializer;
     private final Serializer<Entry> entrySerializer;
     private final int maxPageSizeBytes;
     private final int nodeMaxChildren;
     private final Function<Entry, Key> keyMapper;
-    private final Callable<File> fileFactory;
+    private final AtomicInteger fileNumber = new AtomicInteger();
+    private final File directory;
+    private final String prefix;
 
-    public Creator(Serializer<Key> keySerializer, Serializer<Entry> entrySerializer, int maxPageSizeBytes,
-            int nodeMaxChildren, Function<Entry, Key> keyMapper, Callable<File> fileFactory) {
+    public Creator(KeySerializer<Key> keySerializer, Serializer<Entry> entrySerializer, int maxPageSizeBytes,
+            int nodeMaxChildren, Function<Entry, Key> keyMapper, File directory, String prefix) {
         this.keySerializer = keySerializer;
         this.entrySerializer = entrySerializer;
         this.maxPageSizeBytes = maxPageSizeBytes;
         this.nodeMaxChildren = nodeMaxChildren;
         this.keyMapper = keyMapper;
-        this.fileFactory = fileFactory;
+        this.directory = directory;
+        this.prefix = prefix;
     }
 
     /**
@@ -40,11 +47,43 @@ public class Creator<Entry, Key> {
      * @param entries
      * @return
      */
-    public List<File> persist(Flowable<Entry> entries) {
-        entries.map(entry -> serialize(entry)) //
+    public List<Integer> persist(Flowable<Entry> entries) {
+        int keyRecordSize = keySerializer.size() + FILE_NUM_SIZE + FILE_POSITION_SIZE;
+        int children = (int) Math.floor(Math.sqrt(maxPageSizeBytes / keyRecordSize));
+        return entries.map(entry -> serialize(entry)) //
                 .compose(splitIntoPages()) //
-                .map(list -> toKeyFilePositions(list, writeToFile(list)));
-        return null;
+                .flatMapIterable(list -> toKeyFilePositions(list, writeToFile(list))) //
+                .buffer(children * children) //
+                .map(list -> {
+                    int fileNum = fileNumber.incrementAndGet();
+                    File file = new File(directory, prefix + fileNum);
+                    try (OutputStream fos = new BufferedOutputStream(new FileOutputStream(file))) {
+                        int j = 0;
+                        for (int i = 0; i < list.size(); i += children) {
+                            KeyFilePosition<Key> k = list.get(i);
+                            keySerializer.serialize(k.key);
+                            fos.write(keySerializer.serialize(k.key));
+                            fos.write(intToByteArray(fileNum));
+                            fos.write(intToByteArray((j + 1) * children * keyRecordSize));
+                            j++;
+                        }
+                        for (int i = 0; i < list.size(); i += 1) {
+                            KeyFilePosition<Key> k = list.get(i);
+                            keySerializer.serialize(k.key);
+                            fos.write(keySerializer.serialize(k.key));
+                            fos.write(intToByteArray(k.fileNumber));
+                            fos.write(intToByteArray(k.position));
+                            j++;
+                        }
+                    }
+                    return fileNum;
+                }) //
+                .toList() //
+                .blockingGet();
+    }
+
+    private static final byte[] intToByteArray(int value) {
+        return new byte[] { (byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8), (byte) value };
     }
 
     private SerializedEntry<Entry> serialize(Entry entry) throws IOException {
@@ -61,7 +100,7 @@ public class Creator<Entry, Key> {
                 });
     }
 
-    private List<KeyFilePosition<Key>> toKeyFilePositions(List<SerializedEntry<Entry>> list, File file) {
+    private List<KeyFilePosition<Key>> toKeyFilePositions(List<SerializedEntry<Entry>> list, int fileNumber) {
         int[] position = new int[1];
         return list.stream().map(en -> {
             Key key;
@@ -70,13 +109,13 @@ public class Creator<Entry, Key> {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            KeyFilePosition<Key> kp = new KeyFilePosition<Key>(key, file.getName(), position[0]);
+            KeyFilePosition<Key> kp = new KeyFilePosition<Key>(key, fileNumber, position[0]);
             position[0] += en.bytes.length;
             return kp;
         }).collect(Collectors.toList());
     }
 
-    private File writeToFile(List<SerializedEntry<Entry>> list) throws Exception, IOException, FileNotFoundException {
+    private int writeToFile(List<SerializedEntry<Entry>> list) throws Exception, IOException, FileNotFoundException {
         int size = list.stream() //
                 .map(entry -> entry.bytes.length) //
                 .collect(Collectors.summingInt(x -> x));
@@ -86,21 +125,22 @@ public class Creator<Entry, Key> {
             System.arraycopy(en.bytes, 0, bytes, i, en.bytes.length);
             i += en.bytes.length;
         }
-        File file = fileFactory.call();
-        try (FileOutputStream fos = new FileOutputStream(file)) {
+        int fileNumber = this.fileNumber.incrementAndGet();
+        File file = new File(directory, prefix + fileNumber);
+        try (OutputStream fos = new BufferedOutputStream(new FileOutputStream(file))) {
             fos.write(bytes);
         }
-        return file;
+        return fileNumber;
     }
 
     private static final class KeyFilePosition<Key> {
         final Key key;
-        final String filename;
+        final int fileNumber;
         final int position;
 
-        KeyFilePosition(Key key, String filename, int position) {
+        KeyFilePosition(Key key, int fileNumber, int position) {
             this.key = key;
-            this.filename = filename;
+            this.fileNumber = fileNumber;
             this.position = position;
         }
     }
